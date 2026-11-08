@@ -1,38 +1,43 @@
-# Atajo RYMsearch (Spotify → RYM)
+# RYMsearch Shortcut (Spotify → RYM)
 
-Abre en Rate Your Music el álbum de lo que suena en Spotify (app de escritorio). Aquí vive la copia
-versionada; lo que corre de verdad está en `~/.local/bin`. Tras editar: `./install.sh`.
+Opens on Rate Your Music the album playing in Spotify (desktop app). This is the versioned copy; what actually
+runs lives in `~/.local/bin`. After editing: `./install.sh`.
 
-## Cadena
+The file names are Spanish on purpose: they are the installed commands the Shortcut and the applet call.
 
-1. **Atajo "RYMsearch"** (app Atajos, Quick Action con tecla asignada): una sola acción
-   *Run Shell Script* → `~/.local/bin/rym` (zsh, input a stdin). No se puede exportar por terminal.
-2. **`rym`**: le pregunta a Spotify artista/álbum, limpia sufijos (Deluxe, Remaster…), arma el URL
-   (DuckDuckGo `\` → primer resultado de `rateyourmusic.com/release`; `rym search` = búsqueda de RYM),
-   lo escribe en `~/Library/Caches/rym/url` y abre `~/Applications/RYM Abrir.app`.
-3. **`RYM Abrir.app`** (applet de AppleScript, fuente en `RYM Abrir.applescript`): solo corre
-   `~/.local/bin/rym-abrir`. Existe para que los permisos de Accesibilidad/Automatización sean de una
-   app fija y no de la app que tengas al frente.
-4. **`rym-abrir`**: si ya hay una ventana de Chrome con RYM, abre pestaña ahí. Si no, llama a
-   `rym-espacio-vacio.js`, abre una ventana nueva de Chrome (perfil Default), espera a que exista,
-   la coloca en la pantalla correcta y la trae al frente.
-5. **`rym-espacio-vacio.js`**: con ⌃→/⌃← busca el escritorio vacío más cercano (+1, −1, +2, …) en la
-   pantalla donde estás; si no hay, regresa al original. Sabe en qué escritorio está con `rym-espacios`
-   (helper en Swift, `rym-espacios.swift`, que compila `install.sh`).
+## Chain
 
-Log de cada corrida: `~/Library/Caches/rym/log` (`reuso:`, `espacio:`, `ventana:`).
+1. **"RYMsearch" Shortcut** (Shortcuts app, Quick Action with an assigned key): a single
+   *Run Shell Script* action → `~/.local/bin/rym` (zsh, input to stdin). It can't be exported from the terminal.
+2. **`rym`**: asks Spotify for artist/album, strips suffixes (Deluxe, Remaster…), builds the URL
+   (DuckDuckGo `\` → first `rateyourmusic.com/release` result; `rym search` = RYM's own search),
+   writes it to `~/Library/Caches/rym/url` and opens `~/Applications/RYM Abrir.app`.
+3. **`RYM Abrir.app`** (AppleScript applet, source in `RYM Abrir.applescript`): only runs
+   `~/.local/bin/rym-abrir`. It exists so the Accessibility/Automation permissions belong to a fixed
+   app instead of whatever app is in front.
+4. **`rym-abrir`**: if a Chrome window already has RYM, opens a tab there. Otherwise it calls
+   `rym-espacio-vacio.js`, opens a new Chrome window (Default profile), waits for it to exist,
+   places it on the right screen and brings it to the front.
+5. **`rym-espacio-vacio.js`**: if the desktop you are on is already empty, opens there without moving. Otherwise,
+   with ⌃→ it checks only to the right (+1, +2, …; the left side is almost always full). If it reaches
+   the last one without finding an empty desktop, it creates a new one (Mission Control → "+", Esc) and switches
+   to it; if that fails, it goes back to the original. It knows which desktop it is on through `rym-espacios`
+   (a Swift helper, `rym-espacios.swift`, compiled by `install.sh`).
 
-## Fix 2026-10-27 (escritorio vacío sin la pestaña, con y sin monitor)
+Log of each run: `~/Library/Caches/rym/log` (`reuse:`, `space:` — `here` / `ok` / `new` / `none` / `lost` / `no-info` —, `window:`).
+Entries from before 2026-11-08 use the old Spanish labels (`reuso:`, `espacio:`, `aqui`, `nuevo`, `ninguno`, `perdido`, `ventana:`).
 
-- El escritorio actual se leía del `.plist`, que macOS escribe con retraso (también vía `defaults`:
-  probado, se movía a la derecha, no lo notaba y regresaba). Ahora se pregunta en vivo con `rym-espacios`
-  y cada tecla se confirma esperando a que el escritorio cambie de verdad.
-- Con "Displays have separate Spaces" el script siempre revisaba la pantalla principal, aunque las
-  teclas movieran la otra: ahora la primera tecla detecta qué pantalla se movió y usa esa.
-- "Vacío" solo miraba la esquina superior izquierda de cada ventana: ahora usa intersección real y
-  confirma con dos lecturas.
-- Chrome se activaba a los 0.7 s, antes de que existiera la ventana, y macOS saltaba a otro escritorio
-  con Chrome. Ahora espera la ventana nueva (hasta 10 s) y, si Chrome la abrió en la otra pantalla,
-  la mueve al área de la pantalla donde estás.
+## Fix 2026-10-27 (empty desktop without the tab, with and without a monitor)
 
-Respaldo de la versión anterior: `~/.local/share/rym-backup-2026-10-27/`.
+- The current desktop was read from the `.plist`, which macOS writes late (also via `defaults`:
+  tested; it moved right, didn't notice and went back). Now it asks live with `rym-espacios`
+  and each key press is confirmed by waiting until the desktop really changes.
+- With "Displays have separate Spaces" the script always checked the main screen, even when the
+  keys moved the other one: now the first key press detects which screen moved and uses that one.
+- "Empty" only looked at the top-left corner of each window: now it uses real intersection and
+  confirms with two reads.
+- Chrome was activated at 0.7 s, before the window existed, and macOS jumped to another desktop
+  with Chrome. Now it waits for the new window (up to 10 s) and, if Chrome opened it on the other screen,
+  moves it into the area of the screen you are on.
+
+Backup of the previous version: `~/.local/share/rym-backup-2026-10-27/`.

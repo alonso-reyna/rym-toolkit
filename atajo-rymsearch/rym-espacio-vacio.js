@@ -1,12 +1,13 @@
-// Se mueve al escritorio (Space) vacío más cercano en la pantalla donde estás: +1, -1, +2, -2, ...
-// Si no hay ninguno vacío, regresa al escritorio original. Lo usa rym-abrir.
-// Imprime: "<estado> x1 y1 x2 y2", con el área visible (coordenadas de Chrome) de esa pantalla.
-//   estado = ok | ninguno | sin-cambio (⌃←/⌃→ no movió nada) | sin-info
-// Requiere permiso de Accesibilidad para "RYM Abrir" (manda ⌃← / ⌃→).
+// Finds an empty desktop (Space) on the screen you are on: first the current one, then only to the
+// right (+1, +2, …). If there is none, creates a new one with Mission Control and switches to it. Used by rym-abrir.
+// Prints: "<status> x1 y1 x2 y2", with that screen's visible area (Chrome coordinates).
+//   status = here (the current one was already empty) | ok | new (created it) | none (could not create; went back)
+//            | lost (could not go back either) | no-info
+// Needs the Accessibility permission for "RYM Abrir" (sends ⌃← / ⌃→).
 //
-// Funciona con una pantalla y con monitor externo, con "Displays have separate Spaces" encendido o
-// apagado: cada tecla se confirma leyendo qué pantalla cambió de escritorio (vía cfprefsd, no el
-// plist, que macOS escribe con retraso: ni el archivo ni `defaults` sirven para esto).
+// Works with one screen and with an external monitor, with "Displays have separate Spaces" on or
+// off: each key press is confirmed by reading which screen changed desktop (live via rym-espacios, not
+// the plist, which macOS writes late: neither the file nor `defaults` works for this).
 ObjC.import('AppKit');
 ObjC.import('CoreGraphics');
 ObjC.import('Foundation');
@@ -15,10 +16,10 @@ const app = Application.currentApplication();
 app.includeStandardAdditions = true;
 const se = Application('System Events');
 
-// ---------- pantallas ----------
+// ---------- screens ----------
 function pantallas() {
   const scr = $.NSScreen.screens;
-  const H0 = scr.objectAtIndex(0).frame.size.height; // alto de la pantalla principal (origen de coords)
+  const H0 = scr.objectAtIndex(0).frame.size.height; // height of the main screen (coordinate origin)
   const out = [];
   for (let i = 0; i < scr.count; i++) {
     const s = scr.objectAtIndex(i);
@@ -30,7 +31,7 @@ function pantallas() {
       uuid,
       main: id === $.CGMainDisplayID(),
       x: b.origin.x, y: b.origin.y, w: b.size.width, h: b.size.height,
-      // área visible (sin menú ni Dock) en coordenadas de arriba-izquierda, como las usa Chrome
+      // visible area (no menu bar or Dock) in top-left coordinates, as Chrome uses them
       vis: [vf.origin.x, H0 - (vf.origin.y + vf.size.height), vf.origin.x + vf.size.width, H0 - vf.origin.y],
     });
   }
@@ -43,7 +44,7 @@ function pantallaDe(mon, ps) {
 
 function contiene(p, x, y) { return x >= p.x && x < p.x + p.w && y >= p.y && y < p.y + p.h; }
 
-// Pantalla donde probablemente estás: la de la ventana al frente; si no hay, la del mouse.
+// Screen you are probably on: the frontmost window's; if there is none, the mouse's.
 function pantallaActual(ps) {
   try {
     const proc = se.processes.whose({ frontmost: true })[0];
@@ -52,35 +53,35 @@ function pantallaActual(ps) {
     const p = ps.find(p => contiene(p, x + ww / 2, y + hh / 2));
     if (p) return p;
   } catch (e) {}
-  const m = $.NSEvent.mouseLocation; // origen abajo-izquierda
+  const m = $.NSEvent.mouseLocation; // bottom-left origin
   const H0 = ps.find(p => p.main).h;
   return ps.find(p => contiene(p, m.x, H0 - m.y)) || ps.find(p => p.main);
 }
 
-// ---------- escritorios ----------
-function estado() { // en vivo, vía rym-espacios (CGSCopyManagedDisplaySpaces)
+// ---------- desktops ----------
+function estado() { // live, via rym-espacios (CGSCopyManagedDisplaySpaces)
   return JSON.parse(app.doShellScript('$HOME/.local/bin/rym-espacios'))
     .filter(m => m.spaces.length && m.cur >= 0);
 }
 
 function monitorDe(p, mons) {
-  if (mons.length === 1) return mons[0]; // una pantalla, o "separate Spaces" apagado
+  if (mons.length === 1) return mons[0]; // one screen, or "separate Spaces" off
   return mons.find(m => m.id === p.uuid) || (p.main && mons.find(m => m.id === 'Main')) || mons[0];
 }
 
-// Manda una tecla y espera a que algún monitor cambie de escritorio. Devuelve {mons, id} o null.
+// Sends a key and waits for some monitor to change desktop. Returns {mons, id} or null.
 function paso(dir, antes) {
   se.keyCode(dir > 0 ? 124 : 123, { using: 'control down' }); // → : ←
   for (let t = 0; t < 20; t++) {
     delay(0.1);
     const mons = estado();
     const ch = mons.find(m => { const b = antes.find(x => x.id === m.id); return b && b.cur !== m.cur; });
-    if (ch) { delay(0.5); return { mons, id: ch.id }; } // 0.5 s: termina la animación
+    if (ch) { delay(0.5); return { mons, id: ch.id }; } // 0.5 s: let the animation finish
   }
   return null;
 }
 
-// ---------- ¿está vacío? ----------
+// ---------- is it empty? ----------
 function vacio(p) {
   const arr = ObjC.castRefToObject($.CGWindowListCopyWindowInfo(
     $.kCGWindowListOptionOnScreenOnly | $.kCGWindowListExcludeDesktopElements, 0));
@@ -90,7 +91,7 @@ function vacio(p) {
     if (ObjC.unwrap(w.objectForKey('kCGWindowAlpha')) === 0) continue;
     const r = ObjC.deepUnwrap(w.objectForKey('kCGWindowBounds'));
     if (r.Width < 100 || r.Height < 100) continue;
-    // cuenta la ventana si una parte apreciable cae en esta pantalla (no solo la esquina)
+    // count the window if a sizable part falls on this screen (not just the corner)
     const ix = Math.min(r.X + r.Width, p.x + p.w) - Math.max(r.X, p.x);
     const iy = Math.min(r.Y + r.Height, p.y + p.h) - Math.max(r.Y, p.y);
     if (ix > 50 && iy > 50) return false;
@@ -98,57 +99,107 @@ function vacio(p) {
   return true;
 }
 
-function vacioSeguro(p) { // dos lecturas: durante la animación la lista puede venir a medias
+function vacioSeguro(p) { // two reads: during the animation the list can be incomplete
   if (!vacio(p)) return false;
   delay(0.3);
   return vacio(p);
 }
 
-// ---------- principal ----------
+// ---------- new desktop (Mission Control → "+") ----------
+// Opens Mission Control, clicks the "+" in screen p's Spaces bar and exits with Esc.
+// Returns the new desktop's id or null.
+function nuevoEscritorio(p, monId) {
+  const antes = (estado().find(m => m.id === monId) || { spaces: [] }).spaces;
+  const txt = f => { try { return String(f() || ''); } catch (e) { return ''; } };
+  let pedido = false, abierto = false;
+  try {
+    app.doShellScript('open -a "Mission Control"');
+    pedido = true;
+    const mc = se.processes.byName('Dock').groups.byName('Mission Control');
+    for (let t = 0; t < 30 && !abierto; t++) { delay(0.1); try { abierto = mc.exists(); } catch (e) {} }
+    if (!abierto) return null;
+    delay(0.5); // opening animation
+    // with several screens there is one group per screen: use the one on p
+    const gs = mc.groups();
+    const g = gs.find(x => {
+      try { const [x0, y0] = x.position(), [w, h] = x.size(); return contiene(p, x0 + w / 2, y0 + h / 2); }
+      catch (e) { return false; }
+    }) || (gs.length === 1 ? gs[0] : null);
+    if (!g) return null; // can't tell which bar belongs to this screen: better not to create one on another screen
+    const bs = g.groups.byName('Spaces Bar').buttons();
+    const btn = bs.find(b => /add|agreg|añad/i.test(txt(() => b.description()) + txt(() => b.name()))) || bs[0];
+    btn.click();
+    for (let t = 0; t < 30; t++) {
+      delay(0.1);
+      const m = estado().find(m => m.id === monId);
+      const nuevo = m && m.spaces.find(s => !antes.includes(s));
+      if (nuevo !== undefined) return nuevo;
+    }
+    return null;
+  } catch (e) {
+    return null;
+  } finally {
+    // Esc: exits Mission Control, also if it opened but its structure could not be read
+    if (pedido) { se.keyCode(53); delay(0.7); }
+  }
+}
+
+// ---------- main ----------
+// Only searches to the right (+1, +2, …): the left side is almost always full.
 function run() {
   const ps = pantallas();
-  let mons = estado();
   let p = pantallaActual(ps);
   const salida = (res, pant) => res + ' ' + pant.vis.map(Math.round).join(' ');
-  if (!mons.length) return salida('sin-info', p);
+  // If the desktop you are on is already empty, open here without moving.
+  if (vacioSeguro(p)) return salida('here', p);
 
-  let mon = monitorDe(p, mons);
-  if (mon.spaces.length < 2) return salida('ninguno', p);
-
-  // Primer paso de prueba: confirma qué pantalla mueven las teclas.
+  let mons = estado();
+  if (!mons.length) return salida('no-info', p);
   const inicial = mons;
-  let r = paso(+1, mons), dir = +1;
-  if (!r) { r = paso(-1, mons); dir = -1; }
-  if (!r) return salida('sin-cambio', p);
-  mons = r.mons;
-  mon = mons.find(m => m.id === r.id);
-  if (mons.length > 1) p = pantallaDe(r.id, ps); // con "separate Spaces" la pantalla es la que cambió
-  const idx = mon.spaces.indexOf(inicial.find(m => m.id === r.id).cur);
-  const n = mon.spaces.length;
-  let pos = mon.spaces.indexOf(mon.cur);
-  if (idx < 0 || pos < 0) return salida('sin-info', p);
-  if (vacioSeguro(p)) return salida('ok', p);
+  let mon = monitorDe(p, mons);
+  const posDe = () => { const m = mons.find(m => m.id === mon.id); return m.spaces.indexOf(m.cur); };
+  const ultimo = () => mons.find(m => m.id === mon.id).spaces.length - 1;
+  if (posDe() < 0) return salida('no-info', p);
 
-  const orden = [];
-  for (let d = 1; d < n; d++) {
-    if (idx + d < n) orden.push(idx + d);
-    if (idx - d >= 0) orden.push(idx - d);
-  }
-  const irA = destino => {
-    for (let k = 0; pos !== destino && k < 2 * n; k++) {
-      const rr = paso(destino > pos ? +1 : -1, mons);
-      if (!rr || rr.id !== mon.id) return false; // la tecla no hizo nada o movió otra pantalla
-      mons = rr.mons;
-      const m = mons.find(m => m.id === mon.id);
-      pos = m.spaces.indexOf(m.cur);
+  // First step to the right: also confirms which screen the keys move. With several screens it is
+  // always tried (the guessed one may not be the one the keys move); with one, only if there is room.
+  if (mons.length > 1 || posDe() < ultimo()) {
+    const r = paso(+1, mons);
+    if (r) {
+      mons = r.mons;
+      mon = mons.find(m => m.id === r.id);
+      if (mons.length > 1) p = pantallaDe(r.id, ps); // with "separate Spaces" the screen is the one that changed
+      if (vacioSeguro(p)) return salida('ok', p);
+      while (posDe() >= 0 && posDe() < ultimo()) {
+        const rr = paso(+1, mons);
+        if (!rr) break; // the key did nothing
+        mons = rr.mons;
+        if (rr.id !== mon.id) break; // moved another screen
+        if (vacioSeguro(p)) return salida('ok', p);
+      }
     }
-    return pos === destino;
-  };
-  for (const destino of orden) {
-    if (destino === idx + dir) continue; // ya revisado en el paso de prueba
-    if (!irA(destino)) break;
-    if (vacioSeguro(p)) return salida('ok', p);
   }
-  irA(idx); // ninguno vacío: regresa
-  return salida('ninguno', p);
+  const ini = inicial.find(m => m.id === mon.id).cur;
+
+  // Goes to the desktop with id `id` on mon's screen, with ⌃←/⌃→.
+  const irA = id => {
+    for (let k = 0; k < 40; k++) {
+      const m = mons.find(m => m.id === mon.id);
+      const a = m.spaces.indexOf(m.cur), b = m.spaces.indexOf(id);
+      if (a < 0 || b < 0) return false;
+      if (a === b) return true;
+      const rr = paso(b > a ? +1 : -1, mons);
+      if (!rr) return false;
+      mons = rr.mons;
+      if (rr.id !== mon.id) return false; // moved another screen
+    }
+    return false;
+  };
+
+  // No empty desktop to the right: create a new one and switch to it.
+  const nuevo = nuevoEscritorio(p, mon.id);
+  mons = estado();
+  if (nuevo !== null && irA(nuevo)) return salida('new', p);
+  // that failed: go back to the original (if that fails too, report "lost"; rym-abrir opens wherever it ended up)
+  return salida(irA(ini) ? 'none' : 'lost', p);
 }
