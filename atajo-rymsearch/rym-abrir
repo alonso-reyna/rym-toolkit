@@ -1,16 +1,16 @@
 #!/bin/zsh
-# Abre en Chrome la URL guardada por rym (~/Library/Caches/rym/url). Lo ejecuta "RYM Abrir.app",
-# que es la app que tiene los permisos de Accesibilidad/Automatización (sin importar desde qué app uses el atajo).
+# Opens in Chrome the URL saved by rym (~/Library/Caches/rym/url). Run by "RYM Abrir.app",
+# the app that holds the Accessibility/Automation permissions (whatever app you trigger the shortcut from).
 cache=~/Library/Caches/rym
 url=$(<$cache/url)
 log() { print -r -- "$(date +%T) $*" >> $cache/log; }
-# Solo URLs que arma rym (evita que algo raro llegue a Chrome como opción de línea de comandos)
+# Only URLs that rym builds (keeps anything odd from reaching Chrome as a command-line option)
 case $url in
   https://duckduckgo.com/\?*|https://rateyourmusic.com/*) ;;
-  *) log "url rechazada: $url"; exit 1 ;;
+  *) log "url rejected: $url"; exit 1 ;;
 esac
 
-# 1. Si ya hay una ventana de Chrome con RYM, abre el álbum como pestaña ahí y lleva a ese escritorio
+# 1. If a Chrome window already has RYM, open the album as a tab there and switch to that desktop
 reuso=$(osascript - "$url" 2>&1 <<'EOF'
 on run argv
 	if application id "com.google.Chrome" is not running then return "no"
@@ -30,23 +30,23 @@ on run argv
 end run
 EOF
 )
-log "reuso: $reuso"
+log "reuse: $reuso"
 [[ "$reuso" == "ok" ]] && exit 0
 
-# 2. Si no: se pasa al escritorio vacío más cercano (en la pantalla donde estás)
+# 2. Otherwise: move to the nearest empty desktop (on the screen you are on)
 res=$(osascript -l JavaScript ~/.local/bin/rym-espacio-vacio.js 2>&1)
-log "espacio: $res"
-area=${res#* }; [[ "$area" == "$res" ]] && area=""   # "x1 y1 x2 y2" o vacío si hubo error
+log "space: $res"
+area=${res#* }; [[ "$area" == "$res" ]] && area=""   # "x1 y1 x2 y2", or empty on error
 
-# 3. Ventana nueva de Chrome. Se guardan los ids de las ventanas que ya existían para reconocer la nueva.
+# 3. New Chrome window. Save the ids of existing windows to recognize the new one.
 antes=$(osascript -l JavaScript -e '
   const c = Application("com.google.Chrome");
   c.running() ? "," + c.windows.id().join(",") + "," : ","' 2>/dev/null)
 open -gnb com.google.Chrome --args --profile-directory="Default" --new-window "$url"
 
-# 4. Espera a que aparezca (hasta 10 s; en arranque en frío tarda), la mete en el área de esta
-#    pantalla y la trae al frente. Activar Chrome antes de que exista la ventana hacía que macOS
-#    saltara a otro escritorio con ventanas de Chrome y te dejara en el vacío.
+# 4. Wait for it to appear (up to 10 s; a cold start is slow), fit it into this screen's area
+#    and bring it to the front. Activating Chrome before the window exists made macOS jump
+#    to another desktop with Chrome windows and left you on the empty one.
 fin=$(osascript -l JavaScript - "$antes" "$area" 2>&1 <<'EOF'
 function run([antes, area]) {
   const c = Application('com.google.Chrome');
@@ -55,12 +55,12 @@ function run([antes, area]) {
     delay(0.1);
     try { w = c.windows().find(v => !antes.includes(',' + v.id() + ',')) || null; } catch (e) {}
   }
-  if (!w) { c.activate(); return 'sin-ventana'; }
+  if (!w) { c.activate(); return 'no-window'; }
   const a = (area || '').split(' ').map(Number);
   if (a.length === 4 && a.every(Number.isFinite)) {
     const [x1, y1, x2, y2] = a, b = w.bounds();
     const ww = Math.min(b.width, x2 - x1), hh = Math.min(b.height, y2 - y1);
-    // si ya cae dentro del área, no la mueve; si no (p. ej. Chrome la abrió en la otra pantalla), la centra
+    // if it already fits inside the area, leave it; otherwise (e.g. Chrome opened it on the other screen) center it
     const dentro = b.x >= x1 && b.y >= y1 && b.x + b.width <= x2 && b.y + b.height <= y2;
     if (!dentro) w.bounds = { x: Math.round(x1 + (x2 - x1 - ww) / 2), y: Math.round(y1 + (y2 - y1 - hh) / 2), width: ww, height: hh };
   }
@@ -70,4 +70,4 @@ function run([antes, area]) {
 }
 EOF
 )
-log "ventana: $fin"
+log "window: $fin"

@@ -1,6 +1,6 @@
-// Imprime en JSON los escritorios de cada pantalla, en vivo: [{id: UUID, cur: id actual, spaces: [ids en orden]}].
-// Usa la API privada CGSCopyManagedDisplaySpaces (la misma que yabai); com.apple.spaces.plist se actualiza con retraso.
-// Lo compila install.sh a ~/.local/bin/rym-espacios.
+// Prints each screen's desktops as live JSON: [{id: UUID, cur: current id, spaces: [ids in order]}].
+// Uses the private CGSCopyManagedDisplaySpaces API (same as yabai); com.apple.spaces.plist updates late.
+// install.sh compiles it to ~/.local/bin/rym-espacios.
 import Foundation
 typealias MainConn = @convention(c) () -> Int32
 typealias CopySpaces = @convention(c) (Int32) -> Unmanaged<CFArray>

@@ -1,6 +1,6 @@
 const assert = require("assert");
 const path = require("path");
-const api = require(process.argv[2] ? path.resolve(process.argv[2]) : path.join(__dirname, "..", "rym-chart-picker-plus.user.js"));
+const api = require(process.argv[2] ? path.resolve(process.argv[2]) : path.join(__dirname, "..", "rym-toolkit.user.js"));
 
 const settings = { ...api.DEFAULT_SETTINGS };
 const compat = { users: [
@@ -230,7 +230,7 @@ assert.equal(api.listPathKey("/list/U/slug/15"), "/list/u/slug/");
 assert.equal(api.listPathKey("/list/u/slug/extra/"), null);
 assert.equal(api.listPathKey("/list/u/"), null);
 assert.equal(api.listPathKey("/list/u/slug/2/3/"), null);
-// Hrefs externos nunca llegan a href= ni a fetch: siempre la ruta relativa canónica.
+// External hrefs never reach href= or fetch: always the canonical relative path.
 assert.equal(api.safeListHref({ url: "https://evil.example/list/u/slug/" }), "/list/u/slug/");
 assert.equal(api.safeListHref({ key: "/list/u/slug/", url: "javascript:alert(1)" }), "/list/u/slug/");
 assert.equal(api.safeListHref({ url: "javascript:alert(1)" }), "#");

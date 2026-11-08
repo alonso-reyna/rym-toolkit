@@ -4,7 +4,7 @@
 
 **Goal:** Let the userscript tell curated RYM lists apart from personal logs: tabs on the release page's lists section, a list-page panel with starring, lists from compatible users, and a "find lists" shortcut.
 
-**Architecture:** Everything lives in `rym-chart-picker-plus.user.js`. New pure helpers (classification, scoring, text parsers, URL builders) go in the pure block above `PURE_API` and are exported for `node test/pure.test.js`. DOM parsers take a `Document` and are exercised by the browser smoke test on fixtures. Runtime adds two GM storage keys (list cache, starred lists), a `list` page mode, a sequential rate-limited fetcher, and three UI pieces (release tabs, panel "Lists" section, list-page panel).
+**Architecture:** Everything lives in `rym-toolkit.user.js`. New pure helpers (classification, scoring, text parsers, URL builders) go in the pure block above `PURE_API` and are exported for `node test/pure.test.js`. DOM parsers take a `Document` and are exercised by the browser smoke test on fixtures. Runtime adds two GM storage keys (list cache, starred lists), a `list` page mode, a sequential rate-limited fetcher, and three UI pieces (release tabs, panel "Lists" section, list-page panel).
 
 **Tech Stack:** Vanilla JS userscript (Tampermonkey, `GM_getValue`/`GM_setValue`/`GM_addStyle`/`GM_addValueChangeListener`), Node `assert` tests, static fixtures served with `python3 -m http.server`.
 
@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Single file `rym-chart-picker-plus.user.js`; pure helpers above `if (typeof module !== "undefined" && module.exports)`, runtime below. Never `require` anything.
+- Single file `rym-toolkit.user.js`; pure helpers above `if (typeof module !== "undefined" && module.exports)`, runtime below. Never `require` anything.
 - Settings key stays `rym_chart_picker_settings_v16`. New keys: `rym_chart_picker_lists_v1`, `rym_chart_picker_starred_lists_v1`.
 - New `@match`: `https://rateyourmusic.com/list/*` and `https://www.rateyourmusic.com/list/*`.
 - UI text in English. Docs (`TUTORIAL.md`, `CLAUDE.md`, commit messages) in Spanish.
@@ -35,12 +35,12 @@
 ### Task 1: Classification and scoring (pure)
 
 **Files:**
-- Modify: `rym-chart-picker-plus.user.js` (pure block, before `const PURE_API`; add exports to `PURE_API`)
+- Modify: `rym-toolkit.user.js` (pure block, before `const PURE_API`; add exports to `PURE_API`)
 - Test: `test/pure.test.js`
 
 **Interfaces:**
 - Produces:
-  - `const LIST_LOG_CATEGORIES: Set<string>` and `const LIST_OTHER_CATEGORIES: Set<string>` with the exact names from the spec section "Clasificación de una lista" (`log` and `other` sets), compared case-insensitively after `cleanText`.
+  - `const LIST_LOG_CATEGORIES: Set<string>` and `const LIST_OTHER_CATEGORIES: Set<string>` with the exact names from the spec section "Classifying a list" (`log` and `other` sets), compared case-insensitively after `cleanText`.
   - `classifyListCategories(categories: string[], likes: number|null) -> "log"|"other"|"curated"|"unknown"`: any `log` category → `log`; else any `other` → `other`; else ≥1 category → `curated`; no categories: `likes >= 3` → `curated`, `likes` is a number → `other`, `likes === null` → `unknown`.
   - `classifyListTitle(title: string) -> "log"|"unknown"`: regex set from the spec (`log`, `diary`, `journal`, `listening`, `listened`, `first listens?`, `\b20\d\d\s*:`, only-symbols title, `w\.?i\.?p`, `to listen`, `backlog`), case-insensitive.
   - `classifyList(entry: {title, categories?, likes?, override?, fetchedAt?}) -> {cls: string, provisional: boolean}`: `override` wins; else if `fetchedAt` → `classifyListCategories` (provisional false); else `classifyListTitle` (provisional true when it says `log`; `unknown` otherwise).
@@ -88,7 +88,7 @@ assert.deepEqual(api.sortListsByScore([l1, l2, l3], listCtx).map(l => l.key), [l
 ### Task 2: Text parsers, keys and URLs (pure) + DOM parsers
 
 **Files:**
-- Modify: `rym-chart-picker-plus.user.js` (pure block; DOM parsers go next to `parseCompatDocument`)
+- Modify: `rym-toolkit.user.js` (pure block; DOM parsers go next to `parseCompatDocument`)
 - Test: `test/pure.test.js`
 - Fixtures already present: `test/fixtures/list/adontomas/listening-log-2026/index.html`, `test/fixtures/list/adontomas/index.html`
 
@@ -152,7 +152,7 @@ Adjust the `state.year` assignment to whatever shape `createState()`/`parseYearS
 ### Task 3: Storage, list page mode and the sequential fetcher (runtime)
 
 **Files:**
-- Modify: `rym-chart-picker-plus.user.js` (header `@match`; runtime after `saveCompat`)
+- Modify: `rym-toolkit.user.js` (header `@match`; runtime after `saveCompat`)
 - Test: `test/pure.test.js` for the pure cache helpers; smoke test for the rest
 
 **Interfaces:**
@@ -195,7 +195,7 @@ assert.ok(prunedBig.lists[`/list/u/${api.LIST_CACHE_MAX}/`]);
 - [ ] **Step 2: Run** → FAIL.
 - [ ] **Step 3: Implement** pure helpers (export) and runtime pieces. In the `PAGE === "list"` branch call `captureListFromCurrentPage()` **before** the panel is built (the panel still builds; Task 5 decides what it shows). Add the `@match` lines.
 - [ ] **Step 4: Run** `node test/pure.test.js` → PASS.
-- [ ] **Step 5: Smoke test** the list fixture: `cd test/fixtures && cp ../../rym-chart-picker-plus.user.js script.js && python3 -m http.server 8765`; add `<script src="/stub.js"></script><script src="/script.js"></script>` before `</body>` in `test/fixtures/list/adontomas/listening-log-2026/index.html`; open `http://localhost:8765/list/adontomas/listening-log-2026/`; in the console `JSON.parse(window.__store.rym_chart_picker_lists_v1)` must contain key `/list/adontomas/listening-log-2026/` with `categories: ["Listener's Diary"]`, `likes: 1`, `items: 369`, `id: 1547652`; `window.__errors` empty. Remove `script.js`. (Use the T3 `preview_*` tools or Playwright for this; if no browser is available, say so in the report.)
+- [ ] **Step 5: Smoke test** the list fixture: `cd test/fixtures && cp ../../rym-toolkit.user.js script.js && python3 -m http.server 8765`; add `<script src="/stub.js"></script><script src="/script.js"></script>` before `</body>` in `test/fixtures/list/adontomas/listening-log-2026/index.html`; open `http://localhost:8765/list/adontomas/listening-log-2026/`; in the console `JSON.parse(window.__store.rym_chart_picker_lists_v1)` must contain key `/list/adontomas/listening-log-2026/` with `categories: ["Listener's Diary"]`, `likes: 1`, `items: 369`, `id: 1547652`; `window.__errors` empty. Remove `script.js`. (Use the T3 `preview_*` tools or Playwright for this; if no browser is available, say so in the report.)
 - [ ] **Step 6: Commit** `feat(lists): caché de listas, favoritas, modo página de lista y fetch secuencial`.
 
 ---
@@ -203,7 +203,7 @@ assert.ok(prunedBig.lists[`/list/u/${api.LIST_CACHE_MAX}/`]);
 ### Task 4: F1 — tabs on the release lists section
 
 **Files:**
-- Modify: `rym-chart-picker-plus.user.js` (runtime; new CSS in the `GM_addStyle` block; new `renderReleaseLists()` called from `render()` when `PAGE === "release"`)
+- Modify: `rym-toolkit.user.js` (runtime; new CSS in the `GM_addStyle` block; new `renderReleaseLists()` called from `render()` when `PAGE === "release"`)
 
 **Interfaces:**
 - Consumes: `parseReleaseListsSection`, `classifyList`, `sortListsByScore`, `listCache`, `starred`, `fetchListsSequentially`, `setListOverride`, `toggleStarred`, `selectCompatUsers(compat, settings)` (for the compat set, usernames lowercased).
@@ -223,7 +223,7 @@ assert.ok(prunedBig.lists[`/list/u/${api.LIST_CACHE_MAX}/`]);
 ### Task 5: F4 — list page panel and starred lists in the panel
 
 **Files:**
-- Modify: `rym-chart-picker-plus.user.js` (panel HTML template near line 1300–1360; `render()`; CSS)
+- Modify: `rym-toolkit.user.js` (panel HTML template near line 1300–1360; `render()`; CSS)
 
 **Interfaces:**
 - Consumes: `listCache`, `starred`, `toggleStarred`, `setListOverride`, `classifyList`.
@@ -239,7 +239,7 @@ assert.ok(prunedBig.lists[`/list/u/${api.LIST_CACHE_MAX}/`]);
 ### Task 6: F3 — "Find lists on RYM"
 
 **Files:**
-- Modify: `rym-chart-picker-plus.user.js` (Lists section of the panel from Task 5; settings panel)
+- Modify: `rym-toolkit.user.js` (Lists section of the panel from Task 5; settings panel)
 
 **Interfaces:**
 - Consumes: `buildListSearchUrl(state, settings)`.
@@ -254,7 +254,7 @@ assert.ok(prunedBig.lists[`/list/u/${api.LIST_CACHE_MAX}/`]);
 ### Task 7: F2 — lists by compatible users
 
 **Files:**
-- Modify: `rym-chart-picker-plus.user.js` (header `@match` for `https://rateyourmusic.com/list/*` already covers `/list/<user>/`; runtime)
+- Modify: `rym-toolkit.user.js` (header `@match` for `https://rateyourmusic.com/list/*` already covers `/list/<user>/`; runtime)
 
 **Interfaces:**
 - Consumes: `selectCompatUsers(compat, settings)`, `parseUserListsDocument`, `listCache.compatLists`, `classifyList`, `sortListsByScore`, `fetchListsSequentially` pattern (write a sibling `fetchUserListsSequentially(usernames, {onEach, onDone})` with the same policy, cap 10 users per click, 7-day freshness per user via `compatLists[user].fetchedAt`).
@@ -269,11 +269,11 @@ assert.ok(prunedBig.lists[`/list/u/${api.LIST_CACHE_MAX}/`]);
 ### Task 8: Docs, version, fixtures hygiene
 
 **Files:**
-- Modify: `rym-chart-picker-plus.user.js` (`@version 1.3.0`), `TUTORIAL.md`, `CLAUDE.md`, `brainstorms/2026-10-21-rym-chart-picker-lists.md` (estado), `test/fixtures/list/adontomas/listening-log-2026/index.html` and `test/fixtures/list/adontomas/index.html` (keep the script tags, like the other fixtures)
+- Modify: `rym-toolkit.user.js` (`@version 1.3.0`), `TUTORIAL.md`, `CLAUDE.md`, `brainstorms/2026-10-21-rym-chart-picker-lists.md` (status), `test/fixtures/list/adontomas/listening-log-2026/index.html` and `test/fixtures/list/adontomas/index.html` (keep the script tags, like the other fixtures)
 
 - [ ] **Step 1:** Bump `@version` to `1.3.0`.
-- [ ] **Step 2:** `TUTORIAL.md`: new section "Listas" (pestañas en el release, botón Rate y qué pasa si RYM bloquea, estrella y favoritas, Find lists, Lists by compatible users, overrides, settings nuevos). Spanish.
-- [ ] **Step 3:** `CLAUDE.md`: add to "Hechos de RYM verificados" (dated 2026-10-21): list page selectors (`#content h1`, `a.user`, `a.genre[href^="/list_classifier/"]`, `[List<id>]`, `span[id^="favtext_"]`, `#nav_bottom .navlinkcurrent` = "max - min" items, `table#user_list td.number`), user lists index `/list/<user>/` with `a.listpage_list` + `.smallgray` "N items", classifier pages are flat and unranked, `searchtype=l` returned releases (list search type unverified), release lists-section markup **unverified** (fixture is a guess; parser is anchor-based). Add new storage keys and the anti-Cloudflare policy to "Convenciones" / "Semántica que no hay que romper". Add "Lo que el usuario descartó: agregación 'lists you keep running into'".
-- [ ] **Step 4:** Spec file: append `## Estado (2026-10-21)` with what was implemented and what remains to verify in real RYM (release section markup, searchtype).
+- [ ] **Step 2:** `TUTORIAL.md`: new section "Lists" (tabs on the release, the Rate button and what happens if RYM blocks, star and favorites, Find lists, Lists by compatible users, overrides, new settings). Spanish.
+- [ ] **Step 3:** `CLAUDE.md`: add to "Verified RYM facts" (dated 2026-10-21): list page selectors (`#content h1`, `a.user`, `a.genre[href^="/list_classifier/"]`, `[List<id>]`, `span[id^="favtext_"]`, `#nav_bottom .navlinkcurrent` = "max - min" items, `table#user_list td.number`), user lists index `/list/<user>/` with `a.listpage_list` + `.smallgray` "N items", classifier pages are flat and unranked, `searchtype=l` returned releases (list search type unverified), release lists-section markup **unverified** (fixture is a guess; parser is anchor-based). Add new storage keys and the anti-Cloudflare policy to "Conventions" / "Semantics not to break". Add to "What the user dropped": aggregating "lists you keep running into".
+- [ ] **Step 4:** Spec file: append `## Status (2026-10-21)` with what was implemented and what remains to verify in real RYM (release section markup, searchtype).
 - [ ] **Step 5:** Run `node test/pure.test.js` → PASS; `git status` shows no `test/fixtures/script.js`.
 - [ ] **Step 6: Commit** `1.3.0: listas curadas, favoritas y listas de usuarios compatibles`.

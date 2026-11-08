@@ -1,43 +1,41 @@
 # RYM Toolkit
 
-Userscript para rateyourmusic.com (en Tampermonkey aparece como "RYM Chart Picker+"). Fork de [RYM Music Chart Picker](https://github.com/Lin-808/rym-music-chart-picker) de Lin808.
-Usa la misma clave de settings, así que al reemplazar el script original no pierdes tu configuración.
+Tampermonkey userscript for rateyourmusic.com. In Tampermonkey it shows up as "RYM Chart Picker+".
+It started as a fork of [RYM Music Chart Picker](https://github.com/Lin-808/rym-music-chart-picker) by Lin808 and uses
+the same settings key, so replacing the original script keeps your configuration.
 
-Cómo se usa: [TUTORIAL.md](TUTORIAL.md). Contexto para retomar el desarrollo: [CLAUDE.md](CLAUDE.md).
+What it does:
 
-## Instalar
+- Pick genres, descriptors, year, type and language from a release or film page and open the matching chart.
+- Edit any `/charts/...` URL in place.
+- Filter charts by your most compatible users (music or film).
+- Find, rate and star lists for a release; capture lists you visit.
+- Random pick on chart pages.
+- Jump between RYM and Letterboxd.
 
-Con Tampermonkey instalado, abre este link y dale **Install**:
+How to use it: [TUTORIAL.md](TUTORIAL.md). Context for picking development back up: [CLAUDE.md](CLAUDE.md).
 
-https://raw.githubusercontent.com/alonso-reyna/rym-toolkit/main/rym-chart-picker-plus.user.js
+## Install
 
-El script trae `@updateURL`, así que Tampermonkey se actualiza solo cada vez que hay push a `main`
-(Dashboard → Settings → Script Update → Check Interval; o "Check for userscript updates" para forzar).
-Desactiva "RYM Music Chart Picker 1.0.2" si lo tenías.
+With Tampermonkey installed, open this link and click **Install**:
 
-Para desarrollar en local: abre `file:///<ruta a esta carpeta>/rym-chart-picker-plus.user.js` (necesita
-"Allow access to file URLs" en Tampermonkey) y sube `@version` tras cada cambio.
+https://raw.githubusercontent.com/alonso-reyna/rym-toolkit/main/rym-toolkit.user.js
 
-## Qué cambió respecto a 1.0.2
+The script has an `@updateURL`, so Tampermonkey updates it on its own after each push to `main`
+(Dashboard → Settings → Script Update → Check Interval; or "Check for userscript updates" to force it).
+Disable "RYM Music Chart Picker 1.0.2" if you had it.
 
-- Slug de género tomado del `href` real (arregla Alternative R&B → `alternative-randb` y similares).
-- "Same as release page" funciona en compilaciones, DJ mixes, music videos y bootlegs.
-- Username detectado desde el link de perfil del header; override manual en settings.
-- Resaltado limitado al bloque de info del release; `render()` ya no re-escanea toda la página.
-- **Año**: clic cicla año → década → all time.
-- **Music releases**: tabla de tipos como la nativa de RYM (all / main / albums / singles / clear), default = tipo de la página.
-- **Must contain all** por fila (géneros, influencias, descriptores); influencias encendido por default.
-- **Usuarios compatibles**: toggle + top N en el panel principal (top N = N usuarios distintos, de verdad); sync de
-  `find_similar_users` que también se recoge desde la pestaña de respaldo; score mínimo opcional (apagado por
-  default), exclusiones e "incluirme" en settings.
-- **Modo chart**: en `/charts/*` el panel carga el URL actual tal cual (sin colar defaults de settings) y "Update chart"
-  lo reemplaza en la misma pestaña (Shift+clic = pestaña nueva).
-- Preview del URL al pie del panel (clic selecciona todo).
+For local development: open `file:///<path to this folder>/rym-toolkit.user.js` (needs
+"Allow access to file URLs" in Tampermonkey) and bump `@version` after each change.
 
-## Pruebas
+## Tests
 
 ```bash
 node test/pure.test.js
 ```
 
-`test/fixtures/` tiene páginas falsas con stubs de `GM_*` para probar en navegador (ver CLAUDE.md).
+`test/fixtures/` has fake pages with `GM_*` stubs for testing in a browser (see CLAUDE.md).
+
+## Also in this repo
+
+`atajo-rymsearch/`: the "RYMsearch" macOS Shortcut that opens the album playing in Spotify on RYM. See its README.

@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         RYM Chart Picker+
 // @namespace    https://github.com/alonso-reyna/rym-chart-picker-plus
-// @version      1.5.3
+// @version      1.6.0
 // @homepageURL  https://github.com/alonso-reyna/rym-toolkit
 // @supportURL   https://github.com/alonso-reyna/rym-toolkit/issues
-// @updateURL    https://raw.githubusercontent.com/alonso-reyna/rym-toolkit/main/rym-chart-picker-plus.user.js
-// @downloadURL  https://raw.githubusercontent.com/alonso-reyna/rym-toolkit/main/rym-chart-picker-plus.user.js
+// @updateURL    https://raw.githubusercontent.com/alonso-reyna/rym-toolkit/main/rym-toolkit.user.js
+// @downloadURL  https://raw.githubusercontent.com/alonso-reyna/rym-toolkit/main/rym-toolkit.user.js
 // @description  Pick release or film metadata on RYM, edit charts in place, filter by your most compatible users, open a matching chart, and jump between RYM and Letterboxd. Fork of Lin808's RYM Music Chart Picker.
 // @author       alonsoreyna (fork of Lin808)
 // @match        https://rateyourmusic.com/release/*
@@ -344,7 +344,7 @@ se|Northern Sami|Davvisámegiella|
     compatMinScoreV2: true,
     compatIncludeMe: false,
     compatExcluded: [],
-    filmCompatSource: "film", // film | music | both (solo en modo película)
+    filmCompatSource: "film", // film | music | both (film mode only)
     listSearchType: "s", // verificado 2026-10-22: RYMsearch.types → Lists = "s"
     listFetchDelayMs: 3000,
     listFetchMax: 25
@@ -976,7 +976,7 @@ se|Northern Sami|Davvisámegiella|
       screenPosition: pick("screenPosition", ["top-right", "bottom-right", "top-left", "bottom-left"]),
       selectionStyle: pick("selectionStyle", ["text", "box"]),
       highlightColor: isValidHex(parsed.highlightColor) ? parsed.highlightColor : defaults.highlightColor,
-      // 1.4.2: default pasa a include; settings viejos (sin V2) traían true de fábrica y se resetean una vez.
+      // 1.4.2: default becomes include; old settings (no V2) shipped true by default and are reset once.
       influencesAll: parsed.influencesAllV2 === true ? parsed.influencesAll === true : false,
       influencesAllV2: true,
       compatTopN: intIn("compatTopN", 1, 100),
@@ -985,7 +985,7 @@ se|Northern Sami|Davvisámegiella|
       compatIncludeMe: parsed.compatIncludeMe === true,
       compatExcluded: arrayOf("compatExcluded"),
       filmCompatSource: pick("filmCompatSource", ["film", "music", "both"]),
-      // "l" fue el default (no verificado) de 1.3.0/1.3.1 y busca releases: migrar al tipo real de listas.
+      // "l" was the (unverified) default in 1.3.0/1.3.1 and searches releases: migrate to the real list type.
       listSearchType: typeof parsed.listSearchType === "string" && parsed.listSearchType.trim() && parsed.listSearchType.trim() !== "l" ? parsed.listSearchType.trim() : defaults.listSearchType,
       listFetchDelayMs: intIn("listFetchDelayMs", 1000, 600000),
       listFetchMax: intIn("listFetchMax", 1, 100)
@@ -1057,7 +1057,7 @@ se|Northern Sami|Davvisámegiella|
   }
 
   // ---- Lists: keys, text parsers, search URL (pure) ----
-  // Href seguro para una entrada de caché/estrellas: siempre una ruta relativa /list/<user>/<slug>/.
+  // Safe href for a cache/starred entry: always a relative /list/<user>/<slug>/ path.
   function safeListHref(entry) {
     return listPathKey(entry && (entry.key || entry.url)) || "#";
   }
@@ -1503,7 +1503,7 @@ se|Northern Sami|Davvisámegiella|
     : "music";
 
   if (document.getElementById("rym-picker-panel")) {
-    console.warn("[RYM Chart Picker+] Another chart picker is already running on this page; disable one of them.");
+    console.warn("[RYM Toolkit] Another chart picker is already running on this page; disable one of them.");
     return;
   }
 
@@ -1772,7 +1772,7 @@ se|Northern Sami|Davvisámegiella|
     listFetching = true;
 
     (async () => {
-      // Solo rutas canónicas del mismo origen: nunca se hace fetch de un href crudo.
+      // Only same-origin canonical paths: a raw href is never fetched.
       const queue = keys.map(listPathKey).filter(Boolean).slice(0, settings.listFetchMax);
       try {
         const result = await runFetchQueue(queue, {
@@ -1806,7 +1806,7 @@ se|Northern Sami|Davvisámegiella|
         });
         summary.blocked = result.blocked;
       } catch (error) {
-        console.warn("[RYM Chart Picker+] List fetch failed:", error);
+        console.warn("[RYM Toolkit] List fetch failed:", error);
       } finally {
         summary.stopped = stopRequested;
         listFetching = false;
@@ -1917,7 +1917,7 @@ se|Northern Sami|Davvisámegiella|
         summary.blocked = result.blocked;
         summary.blockedUser = result.blockedItem;
       } catch (error) {
-        console.warn("[RYM Chart Picker+] User lists fetch failed:", error);
+        console.warn("[RYM Toolkit] User lists fetch failed:", error);
       } finally {
         summary.stopped = stopRequested;
         listFetching = false;
@@ -1950,7 +1950,7 @@ se|Northern Sami|Davvisámegiella|
 
     const scope = compatScopeFromSearch(window.location.search);
     saveCompat(users, forUser, scope);
-    toast(`Chart Picker+: saved ${users.length} compatible users${scope === "film" ? " (film)" : ""}.`);
+    toast(`RYM Toolkit: saved ${users.length} compatible users${scope === "film" ? " (film)" : ""}.`);
   }
 
   function getOwnUsername() {
@@ -3022,11 +3022,11 @@ se|Northern Sami|Davvisámegiella|
     panel.classList.toggle("rym-settings-open", state.settingsOpen);
 
     if (PAGE === "chart") {
-      mainButton.textContent = "Chart Picker+: edit this chart";
+      mainButton.textContent = "RYM Toolkit: edit this chart";
       mainButton.style.background = "var(--rym-blue)";
       $("rym-picker-status").textContent = "Editing current chart";
     } else if (PAGE === "list") {
-      mainButton.textContent = "Chart Picker+: lists";
+      mainButton.textContent = "RYM Toolkit: lists";
       mainButton.style.background = "var(--rym-blue)";
       $("rym-picker-status").textContent = "Viewing a list";
     } else {
@@ -4012,7 +4012,7 @@ se|Northern Sami|Davvisámegiella|
     try {
       releaseLists = parseReleaseListsSection(document);
     } catch (error) {
-      console.warn("[RYM Chart Picker+] Could not parse the lists section:", error);
+      console.warn("[RYM Toolkit] Could not parse the lists section:", error);
       releaseLists = null;
     }
   }
@@ -4470,7 +4470,7 @@ se|Northern Sami|Davvisámegiella|
         // The wrapper is hidden while RYM's view is shown, so keep a way back next to the native block.
         listsWrap.style.display = "";
         view.textContent = "";
-        const back = listsEl("a", "rym-lists-link", "Show Chart Picker+ view");
+        const back = listsEl("a", "rym-lists-link", "Show RYM Toolkit view");
         back.style.marginLeft = "0";
         back.addEventListener("click", () => {
           state.listsShowNative = false;
@@ -4479,7 +4479,7 @@ se|Northern Sami|Davvisámegiella|
         view.appendChild(back);
       }
     } catch (error) {
-      console.warn("[RYM Chart Picker+] Lists view failed; leaving RYM's section visible:", error);
+      console.warn("[RYM Toolkit] Lists view failed; leaving RYM's section visible:", error);
       if (releaseLists && releaseLists.container) releaseLists.container.classList.remove("rym-lists-native-hidden");
       if (listsWrap) listsWrap.remove();
       listsWrap = null;

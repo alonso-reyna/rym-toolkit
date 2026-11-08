@@ -1,8 +1,8 @@
 #!/bin/zsh
-# Abre el link de instalación del script (commit actual, o el SHA que le pases) en el Chrome donde está RYM.
-# Solo abre GitHub raw; no hace peticiones a rateyourmusic.com.
+# Opens the script's install link (current commit, or the SHA you pass) in the Chrome window that has RYM.
+# Only opens GitHub raw; makes no requests to rateyourmusic.com.
 sha=${1:-$(git -C "${0:A:h}/.." rev-parse HEAD)}
-url="https://raw.githubusercontent.com/alonso-reyna/rym-toolkit/$sha/rym-chart-picker-plus.user.js"
+url="https://raw.githubusercontent.com/alonso-reyna/rym-toolkit/$sha/rym-toolkit.user.js"
 print -r -- "$url"
 osascript - "$url" <<'OSA'
 on run argv
@@ -14,13 +14,13 @@ on run argv
 						tell w to make new tab with properties {URL:(item 1 of argv)}
 						set index of w to 1
 						activate
-						return "abierto en la ventana de RYM"
+						return "opened in the RYM window"
 					end if
 				end repeat
 			end repeat
 		end tell
 	end if
 	do shell script "open -b com.google.Chrome --args --profile-directory=Default " & quoted form of (item 1 of argv)
-	return "abierto en Chrome (perfil Default)"
+	return "opened in Chrome (Default profile)"
 end run
 OSA

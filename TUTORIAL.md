@@ -1,183 +1,183 @@
-# Tutorial: RYM Chart Picker+
+# Tutorial: RYM Toolkit
 
-El panel vive en la esquina superior derecha de cualquier página de release y de cualquier chart de RYM.
-La idea: tomas datos del disco que tienes enfrente (género, año, descriptores, idioma) y, con un clic,
-abres el chart de RYM que corresponde. Con el filtro de usuarios compatibles, ese chart se convierte en
-un recomendador personal.
+The panel lives in the top-right corner of every RYM release page and every RYM chart.
+The idea: you take data from the record in front of you (genre, year, descriptors, language) and, with one click,
+open the matching RYM chart. With the compatible-users filter, that chart turns into
+a personal recommender.
 
-## 1. El panel
+## 1. The panel
 
-| Botón | Qué hace |
+| Button | What it does |
 |---|---|
-| **Chart Search: OFF / ON** | Enciende el modo selección. Con ON, los datos del release se vuelven clicables. |
-| ▾ / ▴ | Muestra u oculta lo seleccionado. |
-| 🔍 | Abre el chart con lo que llevas (atajo de "Open chart"). |
+| **Chart Search: OFF / ON** | Turns on selection mode. With ON, the release's data becomes clickable. |
+| ▾ / ▴ | Shows or hides what you've selected. |
+| 🔍 | Opens the chart with what you have so far (shortcut for "Open chart"). |
 | ⚙ | Settings. |
 
-Al pie del panel siempre ves el **URL** que se va a abrir. Si algo no cuadra, ahí se ve.
+At the bottom of the panel you always see the **URL** that will open. If something looks off, that's where you'll see it.
 
-## 2. Flujo básico (desde un release)
+## 2. Basic flow (from a release)
 
-1. Clic en **Chart Search: OFF** → ON. El cursor se vuelve cruz sobre lo que puedes elegir.
-2. Clic en los datos que quieras:
-   - **Género** (Alternative R&B, Art Pop…) → `g:` si está en la primera línea, `s:` si está en la segunda (influencias).
-   - **Año** en "Released" → cicla `2019` → `2010s` → *all time*. Ver §3.
+1. Click **Chart Search: OFF** → ON. The cursor turns into a crosshair over the things you can pick.
+2. Click the data you want:
+   - **Genre** (Alternative R&B, Art Pop…) → `g:` if it's on the first line, `s:` if it's on the second (influences).
+   - **Year** in "Released" → cycles `2019` → `2010s` → *all time*. See §3.
    - **Descriptor** (ethereal, melancholic…) → `d:`.
-   - **Language** → `l:`. El **Type** se elige en la tabla **Music releases** del panel (ver §3b).
-3. Cada clic se agrega como un chip en el panel. Clic en el chip para quitarlo.
-4. **Open chart** → se abre en pestaña nueva.
+   - **Language** → `l:`. The **Type** is picked in the panel's **Music releases** table (see §3b).
+3. Each click is added as a chip in the panel. Click the chip to remove it.
+4. **Open chart** → opens in a new tab.
 
-**Clear** borra la selección (no toca el filtro de usuarios ni los settings).
+**Clear** wipes the selection (it doesn't touch the users filter or the settings).
 
-## 3. Año
+## 3. Year
 
-Clic en el año del release cicla **año → década → all time**. El chip dice en qué modo está. Si no tocas
-nada, el chip dice *all time* (clic en ese chip también toma el año del disco).
+Clicking the release's year cycles **year → decade → all time**. The chip shows which mode it's in. If you don't touch
+anything, the chip says *all time* (clicking that chip also takes the record's year).
 
 ## 3b. Music releases
 
-Misma tabla que el filtro nativo de RYM en los charts: Album / EP / Mixtape / DJ Mix / Single / Compilation /
-Video / Unauthorized / Music video / Addl release. Por default está encendido el tipo del disco en el que estás
-(abajo dice *default: Same as release page (Mixtape)*); clic en una celda la enciende o apaga.
-Atajos arriba a la derecha: **all** (todos), **main** (Album, EP, Mixtape, DJ Mix), **albums**, **singles**,
-**clear** (regresa al default).
+Same table as RYM's native filter on charts: Album / EP / Mixtape / DJ Mix / Single / Compilation /
+Video / Unauthorized / Music video / Addl release. By default the type of the record you're on is turned on
+(below it says *default: Same as release page (Mixtape)*); clicking a cell turns it on or off.
+Shortcuts at the top right: **all** (everything), **main** (Album, EP, Mixtape, DJ Mix), **albums**, **singles**,
+**clear** (goes back to the default).
 
 ## 4. "Must contain all"
 
-Junto a los títulos **Primary genres**, **Secondary genres / influences** y **Descriptors** aparece un
-switch pequeño **must contain all** en cuanto eliges algo de esa fila:
+Next to the **Primary genres**, **Secondary genres / influences** and **Descriptors** headings a
+small **must contain all** switch appears as soon as you pick something from that row:
 
-- Apagado → el disco necesita *alguno* (Cloud Rap **o** Ambient Pop).
-- Encendido → necesita *todos* (Cloud Rap **y** Ambient Pop). En el URL se ve como `s:all,…`.
+- Off → the record needs *any* of them (Cloud Rap **or** Ambient Pop).
+- On → it needs *all* of them (Cloud Rap **and** Ambient Pop). In the URL it shows up as `s:all,…`.
 
-Todo viene **apagado por default** (include). Si quieres que las influencias siempre arranquen en "must contain all", actívalo en ⚙ → Genre matching defaults.
+Everything is **off by default** (include). If you want influences to always start on "must contain all", turn it on in ⚙ → Genre matching defaults.
 
-## 5. Usuarios compatibles
+## 5. Compatible users
 
-RYM calcula tus 100 usuarios más compatibles en `find_similar_users`. El script los usa como filtro `u:`
-del chart: en vez de 100 000 votos, el ranking sale de 10–25 personas que puntúan como tú.
+RYM computes your 100 most compatible users in `find_similar_users`. The script uses them as the chart's `u:`
+filter: instead of 100,000 votes, the ranking comes from 10–25 people who rate like you.
 
-En el panel principal, fila **Users**:
-- Marca **Compatible users** y elige **top 5 / 10 / 25 / 50**. Listo: el chip abajo dice `10 compatible`.
-- La primera vez se sincroniza solo. Si RYM bloquea el sync, se abre la página de compatibilidad en otra
-  pestaña y ahí se guarda sola (verás "saved 100 compatible users"). Vuelve y recarga.
+In the main panel, **Users** row:
+- Check **Compatible users** and pick **top 5 / 10 / 25 / 50**. Done: the chip below says `10 compatible`.
+- The first time, it syncs on its own. If RYM blocks the sync, the compatibility page opens in another
+  tab and the list saves itself there (you'll see "saved 100 compatible users"). Go back and reload.
 
-Ajustes finos en ⚙ → **Compatible users**: score mínimo (70 % por default, relativo al #1), incluir tus
-propios ratings (apagado por default) y desmarcar usuarios puntuales. Ahí también se combina con
+Fine-tuning in ⚙ → **Compatible users**: minimum score (off by default, relative to #1), include your
+own ratings (off by default), and uncheck specific users. That's also where you combine it with
 "I'm following", "Myself", etc.
 
-Se recuerda entre charts y se re-sincroniza solo cada 7 días.
+It's remembered across charts and re-syncs on its own every 7 days.
 
-## 5. Editar un chart (modo chart)
+## 6. Editing a chart (chart mode)
 
-En cualquier `/charts/...` el panel dice **"Chart Picker+: edit this chart"**. Clic → carga tipo, año,
-géneros, descriptores, idiomas y usuarios del URL actual. Cambia lo que quieras y:
+On any `/charts/...` page the panel says **"RYM Toolkit: edit this chart"**. Click → it loads the type, year,
+genres, descriptors, languages and users from the current URL. Change whatever you want and:
 
-- **Update chart** → recarga la misma pestaña con el nuevo chart.
-- **Shift + clic** en Update chart → lo abre en pestaña nueva (para comparar dos versiones).
+- **Update chart** → reloads the same tab with the new chart.
+- **Shift + click** on Update chart → opens it in a new tab (to compare two versions).
 
-Si el chart traía usuarios en el URL, el chip dice `from URL (N users)` y se respeta hasta que toques el
-filtro de usuarios en settings.
+If the chart had users in its URL, the chip says `from URL (N users)` and that's respected until you touch the
+users filter in settings.
 
 ### Random (1.5)
 
-En cualquier chart, debajo de la barra azul hay una fila **Random [1] – [N] Roll**. Pones el rango (ej. 1 – 100),
-picas **Roll** (o Enter en un campo) y sale un número: si está en esta página, la entrada se marca con borde
-amarillo y la página baja hasta ella. Si cae en otra página, sale un enlace `#55 → page 2`; al abrirlo, la entrada
-llega marcada. Si el chart es más corto que el rango, dice `chart ends at #N`. Si el número cae en un empate o hueco
-de RYM, marca la entrada de arriba: `#3 (shown as #2)`. El rango se recuerda entre charts.
+On any chart, under the blue bar there's a **Random [1] – [N] Roll** row. You set the range (e.g. 1 – 100),
+hit **Roll** (or Enter in a field) and a number comes up: if it's on this page, the entry gets a yellow
+border and the page scrolls down to it. If it lands on another page, you get a link `#55 → page 2`; when you open it, the entry
+arrives highlighted. If the chart is shorter than the range, it says `chart ends at #N`. If the number lands on a RYM tie or gap,
+it highlights the entry above: `#3 (shown as #2)`. The range is remembered across charts.
 
-## 6. Recetas para listas
+## 7. Recipes for lists
 
-| Quieres | Haz |
+| You want | Do |
 |---|---|
-| Más discos como este, según gente como tú | género principal + **Top 10 compatibles** |
-| La escena de ese momento | género + **±2** años |
-| Joyas que tu círculo subestima | listing **Esoteric** (settings) + compatibles + un descriptor |
-| Qué escucha tu gente este año | compatibles + año actual, sin género |
-| Afinar un chart que salió muy amplio | ábrelo → modo chart → agrega descriptor o acorta años → Update |
+| More records like this one, according to people like you | primary genre + **Top 10 compatible** |
+| The scene of that moment | genre + year cycled to its **decade** |
+| Gems your circle underrates | **Esoteric** listing (settings) + compatible + a descriptor |
+| What your people are listening to this year | compatible + current year, no genre |
+| Narrow down a chart that came out too broad | open it → chart mode → add a descriptor or narrow the year → Update |
 
-Listing (**Top / Popular / Esoteric / Diverse**) se elige en ⚙ y se recuerda.
+Listing (**Top / Popular / Esoteric / Diverse**) is picked in ⚙ and remembered.
 
-## 7. Settings que vale la pena tocar una vez
+## 8. Settings worth touching once
 
-- **Default release type when none is selected**: "Same as release page" (default) usa el tipo del disco.
-  Pon "All release types" si quieres que EPs y singles entren siempre.
-- **Minimum compatibility score**: apagado (0) por default. Si lo subes, recorta la lista *antes* del top N, así que
-  "top 50" puede darte menos de 50.
-- **Your username**: se detecta solo del header. Si dice "Not detected", escríbelo aquí y recarga.
-- **Panel behavior**: "Stay visible while scrolling" si prefieres el panel fijo.
+- **Default release type when none is selected**: "Same as release page" (default) uses the record's type.
+  Set "All release types" if you want EPs and singles to always be included.
+- **Minimum compatibility score**: off (0) by default. If you raise it, it trims the list *before* the top N, so
+  "top 50" can give you fewer than 50.
+- **Your username**: detected automatically from the header. If it says "Not detected", type it here and reload.
+- **Panel behavior**: "Stay visible while scrolling" if you prefer the panel fixed.
 
-## 8. Listas (1.3)
+## 9. Lists (1.3)
 
-Tres usos: ver con criterio las listas donde aparece un disco, guardar las que valen la pena, y encontrar
-listas de la gente compatible contigo.
+Three uses: look critically at the lists a record appears on, save the ones worth keeping, and find
+lists by the people compatible with you.
 
-**En la página de un disco.** La sección de listas de RYM se reemplaza por una vista con pestañas
-**Curated / Unrated / Logs & other / All** (el número entre paréntesis es cuántas hay). Curated son listas
-temáticas; Logs son listening logs y similares; Unrated son las que el script no ha leído (o cuya lectura caducó, ver abajo) y que ni el título ni una clasificación manual ubican; un título tipo "listening log" se marca `log?` hasta leerla. Cada fila trae
-portada, título, autor, chips (`♥ likes`, `N items`, `compat` si el autor está en tu lista de compatibles), una
-estrella y un selector de clasificación. "Show RYM's view" regresa la sección original; "Show Chart Picker+ view"
-vuelve a la nueva.
+**On a record's page.** RYM's lists section is replaced by a tabbed view
+**Curated / Unrated / Logs & other / All** (the number in parentheses is how many there are). Curated are themed
+lists; Logs are listening logs and the like; Unrated are the ones the script hasn't read (or whose reading expired, see below) and that neither the title nor a manual classification places; a title like "listening log" is marked `log?` until it's read. Each row has
+cover art, title, author, chips (`♥ likes`, `N items`, `compat` if the author is on your compatible list), a
+star and a classification selector. "Show RYM's view" brings back the original section; "Show RYM Toolkit view"
+returns to the new one.
 
-**Botón "Rate N unrated (~Ns)".** Abre cada lista sin calificar, una por una y con pausa, para leer likes, items y
-categorías. Cuenta también las de lectura caducada y los `log?`. Mientras corre, el botón dice "Rating N/M…" y junto a él hay un "Stop". Si RYM bloquea (Cloudflare), el script avisa "RYM blocked the fetch; open
-lists manually, they get rated as you visit them": abre las listas tú mismo y se guardan solas al visitarlas. Eso
-es lo más seguro; el botón solo conviene en tandas chicas.
+**"Rate N unrated (~Ns)" button.** Opens each unrated list, one by one with a pause, to read likes, items and
+categories. It also counts the ones whose reading expired and the `log?` ones. While it runs, the button says "Rating N/M…" and next to it there's a "Stop". If RYM blocks (Cloudflare), the script warns "RYM blocked the fetch; open
+lists manually, they get rated as you visit them": open the lists yourself and they save themselves when you visit them. That's
+the safest way; the button is only worth it in small batches.
 
-**Estrella y favoritas.** La estrella (☆/★, "Star this list") guarda la lista. En el panel, sección **Lists**, aparece
-"Starred" con las 10 más recientes (orden por fecha de estrella) (hay opción de ver todas) y una "x" para quitarlas ("Unstar"). Las listas con
-estrella suben en el orden y no se borran de la caché. Los likes/clasificación se guardan 30 días; pasado ese tiempo la lista vuelve a Unrated (conserva estrella y clasificación manual).
+**Star and favorites.** The star (☆/★, "Star this list") saves the list. In the panel, **Lists** section,
+"Starred" shows the 10 most recent (ordered by star date) (there's an option to see all of them) with an "x" to remove them ("Unstar"). Starred
+lists move up in the order and aren't deleted from the cache. Likes/classification are kept for 30 days; after that the list goes back to Unrated (it keeps its star and manual classification).
 
-**Clasificación manual.** El selector de cada fila (`auto / curated / log / other`) fuerza la clasificación cuando el
-script se equivoca. Se recuerda y `auto` la devuelve al cálculo normal.
+**Manual classification.** Each row's selector (`auto / curated / log / other`) forces the classification when the
+script gets it wrong. It's remembered, and `auto` sends it back to the normal calculation.
 
-**Find lists on RYM.** En el panel (sección Lists) abre en pestaña nueva una búsqueda de listas con los géneros
-primarios elegidos (sus nombres) más el chip de año (año, década o rango; se omite si es "all time"). Usa el tipo de
-búsqueda de listas de RYM (`searchtype=s`, configurable como `List search type` en ⚙).
+**Find lists on RYM.** In the panel (Lists section) it opens, in a new tab, a list search with the selected primary
+genres (their names) plus the year chip (year, decade or range; left out if it's "all time"). It uses RYM's list
+search type (`searchtype=s`, configurable as `List search type` in ⚙).
 
-**Lists by compatible users.** Abre una ventana con las listas de tus compatibles (los del top N de settings),
-agrupadas en Curated / Unrated / Logs & other. "Rate N unrated" funciona igual que arriba; el botón
-dice "Fetching N/M… · Stop" mientras trabaja. Si RYM bloquea al **primer** usuario, aparece "Open <user>'s lists" para abrir su
-índice a mano. El índice de cada usuario se considera fresco 7 días; los metadatos de cada lista, 30. Solo se muestran
-los usuarios que hoy salen en tu selección de compatibles (top N, exclusiones).
+**Lists by compatible users.** Opens a window with your compatible users' lists (the ones in the settings' top N),
+grouped into Curated / Unrated / Logs & other. "Rate N unrated" works the same as above; the button
+says "Fetching N/M… · Stop" while it works. If RYM blocks on the **first** user, "Open <user>'s lists" appears so you can open their
+index by hand. Each user's index is considered fresh for 7 days; each list's metadata, 30. Only users
+who currently show up in your compatible selection (top N, exclusions) are shown.
 
-**Settings nuevos (⚙, bloque Lists).**
+**New settings (⚙, Lists block).**
 
-- **List search type**: valor de `searchtype` para buscar listas (`s` = Lists en RYM).
-- **Delay between list fetches (ms)**: pausa entre listas (default 3000, mínimo 1000).
-- **Max lists per click**: tope por clic (default 25, máximo 100).
+- **List search type**: `searchtype` value for searching lists (`s` = Lists on RYM).
+- **Delay between list fetches (ms)**: pause between lists (default 3000, minimum 1000).
+- **Max lists per click**: cap per click (default 25, maximum 100).
 
-Qué no hace: no agrupa "listas que sigues encontrando" entre varios discos (descartado).
+What it doesn't do: it doesn't group "lists you keep running into" across several records (dropped).
 
-## 9. Películas y Letterboxd (1.4)
+## 10. Films and Letterboxd (1.4)
 
-**En una página de película** (`/film/...`): Search ON, clic en el año (cicla año → década → *all time*) y en los
-géneros (primera línea → `g:`, segunda → `s:`). Las películas no tienen descriptores. **Open chart** abre el chart de cine.
+**On a film page** (`/film/...`): Search ON, click the year (cycles year → decade → *all time*) and the
+genres (first line → `g:`, second → `s:`). Films don't have descriptors. **Open chart** opens the film chart.
 
-**En la página de un género de cine** (`/film_genre/...`): hay un botón **Top chart** que abre el chart de ese género.
-Con Search ON puedes hacer clic en un año de la lista o en los géneros relacionados para sumarlos al filtro.
+**On a film genre page** (`/film_genre/...`): there's a **Top chart** button that opens that genre's chart.
+With Search ON you can click a year in the list or the related genres to add them to the filter.
 
-**En un chart de cine**: igual que en música, "edit this chart" te deja cambiar el filtro en sitio.
+**On a film chart**: same as with music, "edit this chart" lets you change the filter in place.
 
-**Compatibles de cine**: la fuente se elige en la fila **Users** del panel, con el selector **Film / Music / Both**
-(solo aparece en páginas de cine; por defecto **Film**). Está desactivado mientras el toggle de usuarios compatibles
-esté apagado, así no borra los `u:` de un chart. **Sync now** sincroniza una sola lista por clic según la fuente: Film
-o Music la suya; con **Both**, la primera que esté vencida (*stale*) empezando por la de cine, y si ninguna lo está,
-la de cine. El sync automático al cargar la
-página refresca como máximo una lista: en cine, la de cine si la fuente la usa; la de música se refresca en páginas de
-música o con **Sync now**.
+**Film compatible users**: the source is picked in the panel's **Users** row, with the **Film / Music / Both** selector
+(it only appears on film pages; **Film** by default). It's disabled while the compatible-users toggle
+is off, so it doesn't wipe a chart's `u:`. **Sync now** syncs a single list per click depending on the source: Film
+or Music syncs its own; with **Both**, the first one that's *stale*, starting with the film one, and if neither is,
+the film one. The automatic sync on page
+load refreshes at most one list: on film pages, the film one if the source uses it; the music one is refreshed on
+music pages or with **Sync now**.
 
-En páginas de cine el settings no muestra "Default release type" ni la sección **Lists**: son solo de música.
+On film pages the settings don't show "Default release type" or the **Lists** section: those are music-only.
 
-**Letterboxd ↔ RYM**: en una película de RYM aparece el botón **Letterboxd** y en Letterboxd el botón **RYM**. Abren el
-primer resultado de DuckDuckGo (sin peticiones del script). El enlace **search** muestra la lista de resultados por si
-el primero no es el correcto.
+**Letterboxd ↔ RYM**: on a RYM film the **Letterboxd** button appears, and on Letterboxd the **RYM** button. They open the
+first DuckDuckGo result (no requests from the script). The **search** link shows the list of results in case
+the first one isn't the right one.
 
-## 10. Si algo falla
+## 11. If something goes wrong
 
-- El chart abre el ranking general (OK Computer, To Pimp a Butterfly…): el filtro no se aplicó. Mira el URL
-  gris del panel y pásamelo.
+- The chart opens the general ranking (OK Computer, To Pimp a Butterfly…): the filter wasn't applied. Look at the
+  gray URL in the panel and send it to me.
 - "Could not detect your username": settings → Your username.
 - "No compatible users yet": Sync now.
-- Las listas dicen "RYM blocked the fetch": espera unos minutos, abre las listas a mano y súbele el delay en settings.
+- Lists say "RYM blocked the fetch": wait a few minutes, open the lists by hand and raise the delay in settings.

@@ -1,113 +1,113 @@
-# RYM Chart Picker+ 1.3: Listas (diseño)
+# RYM Chart Picker+ 1.3: Lists (design)
 
-Fecha: 2026-10-21 · Estado: diseño aprobado en conversación, pendiente de plan e implementación.
-Lee antes `2026-10-20-rym-chart-picker-1-1.md` (contexto del script, hechos verificados de RYM, Cloudflare).
+Date: 2026-10-21 · Status: design approved in conversation, pending plan and implementation.
+Read `2026-10-20-rym-chart-picker-1-1.md` first (script context, verified RYM facts, Cloudflare).
 
-## Intención
+## Intent
 
-En la página de un release, RYM muestra "listas donde está este álbum". La mayoría son diarios personales
-("listening log 2026", "2024 : LOG", "*") y no hay forma de distinguir las listas curadas sin abrir una por una.
-Alonso quiere encontrar listas curadas: a partir del disco que está viendo, y también a partir de la gente con
-gusto parecido al suyo. El classifier de RYM (`/list_classifier/`) es la fuente de verdad sobre qué es una lista,
-pero solo se ve en la página de cada lista.
+On a release page, RYM shows "lists this album is on". Most are personal diaries
+("listening log 2026", "2024 : LOG", "*") and there's no way to tell the curated lists apart without opening them one by one.
+Alonso wants to find curated lists: starting from the record he's looking at, and also starting from people with
+taste similar to his. RYM's classifier (`/list_classifier/`) is the source of truth for what a list is,
+but it's only visible on each list's page.
 
-## Hechos de RYM verificados en esta sesión (2026-10-21, screenshots de Alonso)
+## RYM facts verified in this session (2026-10-21, Alonso's screenshots)
 
-- Página de lista (`/list/<user>/<slug>/`): título, "A list by <user>", `Categories: <links al classifier>`,
-  `[List<id>]`, likes como `♡ +N`, paginación con número total de ítems (p. ej. "369 - 345" en la primera página),
-  botón "Suggest an addition". Ejemplo: `listening log 2026` → Categories: Listener's Diary, 1 like, 369 ítems.
-- Página del classifier (`/list_classifier/<Nombre%20codificado>/`, p. ej. `Listener%27s+Diary`): listado plano y
-  paginado (1,260 páginas para Listener's Diary), cada entrada con título, descripción, "Author: <user>; N items".
-  **Sin likes, sin orden por popularidad, sin filtro por género ni año.** Internamente es un descriptor
-  (`[Descriptor27287]`). No sirve para rankear ni para buscar; solo como diccionario de categorías.
-- Taxonomía del classifier (rama Music y transversales; pegada por Alonso): Best Of, Chart Position,
+- List page (`/list/<user>/<slug>/`): title, "A list by <user>", `Categories: <links to the classifier>`,
+  `[List<id>]`, likes as `♡ +N`, pagination with the total item count (e.g. "369 - 345" on the first page),
+  "Suggest an addition" button. Example: `listening log 2026` → Categories: Listener's Diary, 1 like, 369 items.
+- Classifier page (`/list_classifier/<Encoded%20name>/`, e.g. `Listener%27s+Diary`): flat, paginated
+  listing (1,260 pages for Listener's Diary), each entry with title, description, "Author: <user>; N items".
+  **No likes, no popularity sort, no genre or year filter.** Internally it's a descriptor
+  (`[Descriptor27287]`). Useless for ranking or searching; only as a dictionary of categories.
+- Classifier taxonomy (Music branch and cross-cutting ones; pasted by Alonso): Best Of, Chart Position,
   Music Genres (Pop, Rock…), Music Scenes, Time Periods → All Time / Century / Decade (1870s–2020s) / Year
   (1950–2026), Underrated, Obscure, Worst Of, Influences, Record Labels, Discographies, Artist, Composers,
   Producers, Instruments, Length, Live Performance, Radio, Samples, Scores & Soundtracks, Songs (Homemade
   Playlists, Lyrics…), Releases (Release Attributes, Release Titles, Cover Song Versions, Music Videos),
-  Lists From Other Publications (1001 Albums…), Galleries → Cover Art Themes (muchas subcategorías),
+  Lists From Other Publications (1001 Albums…), Galleries → Cover Art Themes (many subcategories),
   RYM → Autobiographical (Listener's Diary, Gamer's Diary, Viewer's Diary, My Life on RYM), Users, Poll Results,
   Lists of Lists, Projects, Shopping List, Wishlists, Upcoming, Reviews, Humor, Guide, Regions, Miscellaneous.
-- Sección de listas en la página del release: tarjeta con portada, título (truncado) y autor. **Nada más**: ni
-  likes, ni categoría, ni tamaño. Selectores DOM pendientes de verificar (ver "Por verificar").
+- Lists section on the release page: card with cover, title (truncated) and author. **Nothing else**: no
+  likes, no category, no size. DOM selectors still to be verified (see "To verify").
 
-## Decisiones (de Alonso)
+## Decisions (Alonso's)
 
-1. **Pestañas en la sección de listas del release** (opción B del mockup): Curated · Unrated · Logs · All.
-   Reemplaza la vista plana; lo bueno por default, el ruido a un clic.
-2. **Listas de usuarios compatibles**: descubrir listas curadas donde el disco actual no necesariamente está,
-   recorriendo las listas de los usuarios de `find_similar_users` que ya tenemos en caché.
-3. **Buscar listas con los filtros del picker**: atajo a la búsqueda de listas de RYM con género + año del estado
-   actual.
-4. **Soporte en página de lista**: el panel aparece en `/list/*`, muestra la calificación de la lista y permite
-   marcarla con estrella; las listas con estrella quedan como accesos rápidos en el panel.
+1. **Tabs in the release's lists section** (option B in the mockup): Curated · Unrated · Logs · All.
+   Replaces the flat view; the good stuff by default, the noise one click away.
+2. **Lists by compatible users**: discover curated lists where the current record isn't necessarily on,
+   by going through the lists of the `find_similar_users` users we already have cached.
+3. **Search lists with the picker's filters**: shortcut to RYM's list search with genre + year from the current
+   state.
+4. **Support on the list page**: the panel shows up on `/list/*`, shows the list's rating and lets you
+   star it; starred lists become quick links in the panel.
 
-Descartado por Alonso (no construir): "Lists you keep running into" (agregación de listas a lo largo de los
-releases visitados). Navegación por página del classifier (no rankea).
+Rejected by Alonso (don't build): "Lists you keep running into" (aggregating lists across
+visited releases). Browsing via the classifier page (it doesn't rank).
 
 ## Goals / Non-goals / Anti-goals
 
-- Goal: en un release, ver primero las listas curadas con categoría, likes y tamaño; esconder diarios.
-- Goal: desde el panel, llegar a listas curadas de gente compatible y a la búsqueda de listas de RYM.
-- Goal: desde una lista, guardarla como favorita y verla desde cualquier página.
-- Non-goal: rankear el classifier entero, indexar RYM, o replicar su buscador.
-- Non-goal: cambiar nada del flujo de charts existente (semántica 1.2.0 intacta).
-- Anti-goal: **disparar Cloudflare**. Un 403 en RYM real es un fallo del diseño, no un detalle. Ningún fetch
-  automático en segundo plano; todo fetch es explícito, secuencial, con pausa y se detiene al primer error.
-- Anti-goal: romper la sección de listas nativa (listeners de RYM, re-render). Si el script falla, la sección
-  original debe quedar visible e intacta.
+- Goal: on a release, see curated lists first with category, likes and size; hide diaries.
+- Goal: from the panel, reach curated lists by compatible people and RYM's list search.
+- Goal: from a list, save it as a favorite and see it from any page.
+- Non-goal: rank the entire classifier, index RYM, or replicate its search engine.
+- Non-goal: change anything in the existing charts flow (1.2.0 semantics intact).
+- Anti-goal: **triggering Cloudflare**. A 403 on real RYM is a design failure, not a detail. No automatic
+  background fetch; every fetch is explicit, sequential, paced, and stops at the first error.
+- Anti-goal: breaking the native lists section (RYM's listeners, re-render). If the script fails, the original
+  section must stay visible and intact.
 
-## Restricciones
+## Constraints
 
-- Un solo archivo `rym-chart-picker-plus.user.js`; funciones puras arriba del `module.exports`, con test en
-  `test/pure.test.js`. Toda lógica de clasificación, puntuación, parseo de documentos y construcción de URLs es
-  pura y se prueba contra fixtures.
-- Settings siguen en `rym_chart_picker_settings_v16`. Claves nuevas: `rym_chart_picker_lists_v1` (caché de
-  metadatos de listas) y `rym_chart_picker_starred_lists_v1` (favoritas). Compatibles: `rym_chart_picker_compat_v1`.
-- `@match` nuevo: `https://rateyourmusic.com/list/*` (y `www.`). Posiblemente `/~*/lists*` si la vía de
-  fallback "abrir la página y capturar" se usa para listas de usuarios (ver F2).
-- UI en inglés. Sube `@version` a 1.3.0.
+- A single file `rym-toolkit.user.js`; pure functions above `module.exports`, with tests in
+  `test/pure.test.js`. All classification, scoring, document parsing and URL building logic is
+  pure and tested against fixtures.
+- Settings stay in `rym_chart_picker_settings_v16`. New keys: `rym_chart_picker_lists_v1` (list
+  metadata cache) and `rym_chart_picker_starred_lists_v1` (favorites). Compatibles: `rym_chart_picker_compat_v1`.
+- New `@match`: `https://rateyourmusic.com/list/*` (and `www.`). Possibly `/~*/lists*` if the
+  "open the page and capture" fallback is used for user lists (see F2).
+- UI in English. Bump `@version` to 1.3.0.
 
-## Modelo de datos
+## Data model
 
-### Clasificación de una lista
+### Classifying a list
 
-Tres clases: `curated`, `log`, `other`, más `unknown` cuando no hay datos.
+Three classes: `curated`, `log`, `other`, plus `unknown` when there's no data.
 
-- Por **categoría del classifier** (fuente de verdad, cuando la lista ya está en caché). La página de la lista
-  muestra solo la hoja ("Listener's Diary", "Shoegaze", "1994"), sin el camino a la raíz, así que **no** se embebe
-  el árbol: se mantienen dos conjuntos cortos y el default es `curated` (llamada del diseñador: lo que Alonso
-  busca son listas de género/año/región/escena, que son justo las hojas que no cabría enumerar).
-  - `log` (conjunto cerrado): Listener's Diary, Gamer's Diary, Viewer's Diary, My Life on RYM, Autobiographical,
+- By **classifier category** (source of truth, when the list is already cached). The list page
+  only shows the leaf ("Listener's Diary", "Shoegaze", "1994"), without the path to the root, so the tree is **not**
+  embedded: two short sets are kept and the default is `curated` (designer's call: what Alonso
+  is looking for are genre/year/region/scene lists, which are exactly the leaves that would be impossible to enumerate).
+  - `log` (closed set): Listener's Diary, Gamer's Diary, Viewer's Diary, My Life on RYM, Autobiographical,
     Wishlists, Shopping List, Upcoming, User Stats, Favorite Users or Friends, RYM Users in Real Life, Fans Of…,
     Users.
-  - `other` (conjunto cerrado): Galleries, Artist Galleries, Cover Art Themes y sus hojas pegadas por Alonso
+  - `other` (closed set): Galleries, Artist Galleries, Cover Art Themes and its leaves pasted by Alonso
     (Animals, Architecture & Edifices, Business & Finance, Clothing & Accessories, Colors, Culture & Ethnicity,
     Drugs & Alcohol, Fine Arts, Food & Drink, Graphic Design, Health & Medicine, History, Housewares, Media &
     Communication, People, Men, Women, Plants, Religion & Mythology, Science & Nature, Spoofs & Similarities,
     Sports & Games, Symbols, The Human Body, Transportation, Travel & Geography), Release Attributes, Release
     Titles, Cover Song Versions, Music Videos, Humor, Lists of Lists, Projects, Miscellaneous, Reviews, Front Page
     Reviews, Radio, Memoriam, Lost Media, Other Databases, Subculture, Fandom, Television, Anime, Videos, Books,
-    Comics, Magazines, Awards, Games, Free and Legal, Films y toda su rama, Video Games y toda su rama, RYM, RYM25.
-  - Cualquier otra categoría → `curated`.
-  - Varias categorías: `log` gana sobre todo; luego `other`; luego `curated`.
-  - Página leída sin categorías: `curated` si likes ≥ 3, si no `other` (llamada del diseñador).
-- Por **título** (provisional, cuando no hay caché): patrón insensible a mayúsculas sobre el título:
-  `log`, `diary`, `journal`, `listening`, `listened`, `first listens?`, `\b20\d\d\s*:`, `^\W*$` (solo símbolos,
-  como "*"), `w\.?i\.?p`, `to listen`, `backlog` → `log` provisional. Todo lo demás → `unknown`.
-  Un `log` provisional se muestra en la pestaña Logs con un indicador de "guessed from title"; el dato real lo
-  sustituye en cuanto exista.
-- **Override manual**: en cualquier fila, menú con "Mark as curated / log / other / reset". Se guarda en la caché
-  con `override: true` y gana sobre categoría y título.
+    Comics, Magazines, Awards, Games, Free and Legal, Films and its whole branch, Video Games and its whole branch, RYM, RYM25.
+  - Any other category → `curated`.
+  - Several categories: `log` beats everything; then `other`; then `curated`.
+  - Page read with no categories: `curated` if likes ≥ 3, otherwise `other` (designer's call).
+- By **title** (provisional, when there's no cache): case-insensitive pattern on the title:
+  `log`, `diary`, `journal`, `listening`, `listened`, `first listens?`, `\b20\d\d\s*:`, `^\W*$` (symbols only,
+  like "*"), `w\.?i\.?p`, `to listen`, `backlog` → provisional `log`. Everything else → `unknown`.
+  A provisional `log` is shown in the Logs tab with a "guessed from title" indicator; the real data
+  replaces it as soon as it exists.
+- **Manual override**: on any row, a menu with "Mark as curated / log / other / reset". Stored in the cache
+  with `override: true` and it beats category and title.
 
-### Puntuación dentro de Curated
+### Scoring within Curated
 
-`score = log10(likes + 1) * 10 + (compat ? 5 : 0) + (starred ? 100 : 0)`. Orden descendente; empate por
-likes, luego título. `compat` = el autor está en la lista de compatibles seleccionada (`selectCompatUsers`),
-no en la lista completa de 100. Esta fórmula es llamada del diseñador; el builder puede ajustarla si los tests
-muestran algo raro, sin cambiar el orden de prioridad (starred > likes > compat).
+`score = log10(likes + 1) * 10 + (compat ? 5 : 0) + (starred ? 100 : 0)`. Descending order; ties broken by
+likes, then title. `compat` = the author is in the selected compatibles list (`selectCompatUsers`),
+not in the full list of 100. This formula is the designer's call; the builder can tweak it if the tests
+show something odd, without changing the priority order (starred > likes > compat).
 
-### Caché de listas (`rym_chart_picker_lists_v1`)
+### List cache (`rym_chart_picker_lists_v1`)
 
 ```
 { version: 1,
@@ -115,121 +115,121 @@ muestran algo raro, sin cambiar el orden de prioridad (starred > likes > compat)
                          fetchedAt, override?: "curated"|"log"|"other" } } }
 ```
 
-- `listId` es el número de `[List<id>]`. Si la sección del release no expone el id (solo el URL), la clave
-  es el path normalizado `/list/<user>/<slug>/` y el id se rellena al leer la página.
-- Expira a 30 días (`fetchedAt`); un override no expira. Tope 3,000 entradas; al rebasar, se descartan las
-  más viejas sin override ni estrella.
-- Se llena de tres formas: pasiva (cada vez que Alonso abre una página de lista, el script la parsea y guarda),
-  bajo demanda (botón "Rate", F1) y al recorrer listas de compatibles (F2).
+- `listId` is the number from `[List<id>]`. If the release section doesn't expose the id (only the URL), the key
+  is the normalized path `/list/<user>/<slug>/` and the id is filled in when the page is read.
+- Expires after 30 days (`fetchedAt`); an override doesn't expire. Cap of 3,000 entries; when exceeded, the
+  oldest ones without override or star are dropped.
+- Filled in three ways: passive (every time Alonso opens a list page, the script parses and stores it),
+  on demand ("Rate" button, F1), and when going through compatibles' lists (F2).
 
-### Favoritas (`rym_chart_picker_starred_lists_v1`)
+### Favorites (`rym_chart_picker_starred_lists_v1`)
 
-`{ version: 1, lists: [ { id, url, title, author, starredAt } ] }`, orden por `starredAt` desc. Sin tope duro.
+`{ version: 1, lists: [ { id, url, title, author, starredAt } ] }`, sorted by `starredAt` desc. No hard cap.
 
 ## Features
 
-### F1 · Pestañas en la sección de listas del release
+### F1 · Tabs in the release's lists section
 
-- Al cargar un release, el script lee la sección nativa de listas y construye su propia vista **al lado**
-  (no reemplaza el `innerHTML` nativo; la sección original se oculta con CSS y se puede restaurar con un botón
-  "Show RYM's view"). Si el parseo falla o la sección no existe, no se hace nada.
-- Cabecera: `Lists · 13` + pestañas `Curated (4) · Unrated (6) · Logs & other (3) · All` + botón
-  `Rate 6 unrated (~20 s)`. (Llamada del diseñador: la clase `other` comparte pestaña con `log`, en sub-bloque
-  propio debajo de los logs; no ensucia Curated y no merece pestaña.)
-- Unrated = clase `unknown` = lista sin leer todavía (sin caché o expirada). Es lo que cuenta el botón Rate.
-- Pestaña por default: Curated si tiene ≥1; si no, Unrated; si no hay nada en ninguna, All. All = orden original.
-- Fila: portada, título completo (sin truncar, con wrap), autor, y a la derecha: chip de categoría (primera
-  categoría reconocida; "Diary" en rojo, curadas en verde, otras en gris), `♥ N`, `N items`, chip `compat` si
-  aplica, estrella (toggle, F4), menú de override. Unrated muestra "unrated" y, si es log provisional, "log?".
-- Botón **Rate**: recorre las listas sin caché (o expiradas), una a la vez, `fetch` con `credentials: include`,
-  pausa de 3 s entre fetches (constante `LIST_FETCH_DELAY_MS`), máximo 25 por clic. Progreso en el botón
-  ("Rating 3/6…"), botón "Stop". Al primer status ≠ 200 (o HTML sin el marcador `[List`) se detiene y muestra
-  "RYM blocked the fetch; open lists manually, they get rated as you visit them". Cada lista calificada se
-  mueve de pestaña en vivo.
-- Las filas conservan los enlaces nativos; clic normal abre la lista (misma pestaña, como RYM). Visitar la
-  lista la califica por la vía pasiva.
+- When a release loads, the script reads the native lists section and builds its own view **next to it**
+  (it doesn't replace the native `innerHTML`; the original section is hidden with CSS and can be restored with a
+  "Show RYM's view" button). If parsing fails or the section doesn't exist, nothing happens.
+- Header: `Lists · 13` + tabs `Curated (4) · Unrated (6) · Logs & other (3) · All` + button
+  `Rate 6 unrated (~20 s)`. (Designer's call: the `other` class shares a tab with `log`, in its own sub-block
+  below the logs; it doesn't clutter Curated and doesn't deserve its own tab.)
+- Unrated = class `unknown` = list not read yet (no cache or expired). That's what the Rate button counts.
+- Default tab: Curated if it has ≥1; otherwise Unrated; if there's nothing in any, All. All = original order.
+- Row: cover, full title (not truncated, wrapping), author, and on the right: category chip (first
+  recognized category; "Diary" in red, curated in green, others in gray), `♥ N`, `N items`, `compat` chip if
+  applicable, star (toggle, F4), override menu. Unrated shows "unrated" and, if it's a provisional log, "log?".
+- **Rate** button: goes through the lists with no cache (or expired), one at a time, `fetch` with `credentials: include`,
+  3 s pause between fetches (constant `LIST_FETCH_DELAY_MS`), at most 25 per click. Progress on the button
+  ("Rating 3/6…"), "Stop" button. At the first status ≠ 200 (or HTML without the `[List` marker) it stops and shows
+  "RYM blocked the fetch; open lists manually, they get rated as you visit them". Each rated list
+  moves tabs live.
+- Rows keep the native links; a normal click opens the list (same tab, like RYM). Visiting the
+  list rates it via the passive path.
 
-### F2 · Listas de usuarios compatibles
+### F2 · Lists by compatible users
 
-- En el panel, nueva sección **Lists** (debajo de Users). Botón `Lists by compatible users`.
-- Al clic: toma los usuarios de `selectCompatUsers` (los mismos N del filtro `u:`), recorre `/~<user>/lists`
-  (**URL por verificar**) secuencialmente con la misma política de F1 (3 s, stop al primer error, máximo 10
-  usuarios por clic, botón Stop), parsea las listas de cada usuario y las guarda en una caché por usuario
-  (`compatLists: { "<user>": { fetchedAt, lists: [ {url,title, items?, categories?} ] } }` dentro de
-  `rym_chart_picker_lists_v1`, 7 días).
-- Resultado: panel/modal "Lists by compatible users" con las listas agrupadas por clase (Curated primero,
-  luego Unrated, Logs colapsados), cada una con autor, chips como en F1, estrella. Si la página de listas de
-  usuario trae categorías o tamaño, se usan; si no, clasificación por título y botón "Rate" como en F1.
-- Fallback Cloudflare: si el fetch falla en el primer usuario, el botón cambia a "Open <user>'s lists" y el
-  script (con `@match` en `/~*/lists*`) captura la página al abrirse, igual que hoy con `find_similar_users`.
+- In the panel, a new **Lists** section (below Users). Button `Lists by compatible users`.
+- On click: takes the users from `selectCompatUsers` (the same N as the `u:` filter), goes through `/~<user>/lists`
+  (**URL to be verified**) sequentially with the same policy as F1 (3 s, stop at the first error, at most 10
+  users per click, Stop button), parses each user's lists and stores them in a per-user cache
+  (`compatLists: { "<user>": { fetchedAt, lists: [ {url,title, items?, categories?} ] } }` inside
+  `rym_chart_picker_lists_v1`, 7 days).
+- Result: "Lists by compatible users" panel/modal with lists grouped by class (Curated first,
+  then Unrated, Logs collapsed), each with author, chips as in F1, star. If the user's lists page
+  carries categories or size, they're used; otherwise, title classification and a "Rate" button as in F1.
+- Cloudflare fallback: if the fetch fails on the first user, the button changes to "Open <user>'s lists" and the
+  script (with `@match` on `/~*/lists*`) captures the page when it opens, just like today with `find_similar_users`.
 
-### F3 · Buscar listas con los filtros del picker
+### F3 · Search lists with the picker's filters
 
-- En la sección Lists del panel, botón `Find lists on RYM`. Abre en pestaña nueva la búsqueda de listas de RYM
-  con el término construido del estado actual: etiquetas de géneros primarios seleccionados + etiqueta de año
-  (`2015`, `2010s`; nada si all time). Ejemplo: `cloud rap 2010s`.
-- URL **por verificar**: `https://rateyourmusic.com/search?searchterm=<term>&searchtype=l`. Función pura
-  `buildListSearchUrl(state)`; si el término queda vacío, el botón se deshabilita.
-- Sin más inteligencia: es un atajo, no descubrimiento.
+- In the panel's Lists section, a `Find lists on RYM` button. Opens RYM's list search in a new tab
+  with the term built from the current state: labels of the selected primary genres + year label
+  (`2015`, `2010s`; nothing if all time). Example: `cloud rap 2010s`.
+- URL **to be verified**: `https://rateyourmusic.com/search?searchterm=<term>&searchtype=l`. Pure function
+  `buildListSearchUrl(state)`; if the term ends up empty, the button is disabled.
+- No further smarts: it's a shortcut, not discovery.
 
-### F4 · Página de lista y favoritas
+### F4 · List page and favorites
 
-- `@match /list/*`. El script parsea la página (`parseListDocument(doc)` → id, url, title, author, categories
-  (texto y href), likes, items) y guarda en caché (vía pasiva).
-- El panel aparece en la página de lista con la sección Lists arriba: título, chips (categoría, likes, items,
-  clase), estrella toggle, override. El resto del panel (géneros, año…) **no** aplica en listas: se oculta;
-  "Open chart" no se muestra.
-- **Starred lists**: en todas las páginas (release, chart, list), la sección Lists del panel muestra las
-  favoritas como enlaces (título · autor · ♥), con "unstar" al pasar el mouse. Máximo 10 visibles y "show all".
-- Estrella también disponible en las filas de F1 y F2.
+- `@match /list/*`. The script parses the page (`parseListDocument(doc)` → id, url, title, author, categories
+  (text and href), likes, items) and stores it in the cache (passive path).
+- The panel shows up on the list page with the Lists section at the top: title, chips (category, likes, items,
+  class), star toggle, override. The rest of the panel (genres, year…) does **not** apply on lists: it's hidden;
+  "Open chart" isn't shown.
+- **Starred lists**: on every page (release, chart, list), the panel's Lists section shows the
+  favorites as links (title · author · ♥), with "unstar" on hover. At most 10 visible and "show all".
+- Star also available on F1 and F2 rows.
 
-### Política anti-Cloudflare (aplica a F1 y F2)
+### Anti-Cloudflare policy (applies to F1 and F2)
 
-- Pausa y tope son settings (`listFetchDelayMs`, default 3000; `listFetchMax`, default 25 listas / 10 usuarios),
-  no constantes, para poder retirarse sin recompilar.
-- Orden de retirada si en RYM real el bucle dispara 403 aun con pausa: 1) subir pausa a 6–8 s y bajar tope a 10;
-  2) si sigue fallando, F1 se queda solo con vía pasiva + override manual y el botón Rate se oculta; 3) F2 pasa
-  a ser únicamente "Open <user>'s lists" con captura al abrir (el fallback se vuelve el camino principal).
-- Inversión en UI de progreso/Stop: mínima (texto en el botón + botón Stop); nada de barras ni colas.
-- Tras un 403 la navegación normal sigue funcionando (según la experiencia de 1.1: el fallback de abrir la página
-  funcionó justo después del 403). Si en 1.3 se observa lo contrario, el tope por clic baja a 5.
+- Pause and cap are settings (`listFetchDelayMs`, default 3000; `listFetchMax`, default 25 lists / 10 users),
+  not constants, so we can back off without rebuilding.
+- Back-off order if the loop triggers 403 on real RYM even with the pause: 1) raise the pause to 6–8 s and lower the cap to 10;
+  2) if it keeps failing, F1 keeps only the passive path + manual override and the Rate button is hidden; 3) F2 becomes
+  only "Open <user>'s lists" with capture on open (the fallback becomes the main path).
+- Investment in progress/Stop UI: minimal (text on the button + Stop button); no bars or queues.
+- After a 403, normal browsing keeps working (based on the 1.1 experience: the open-the-page fallback
+  worked right after the 403). If the opposite is observed in 1.3, the per-click cap drops to 5.
 
-## Por verificar en RYM real (Alonso, con sesión, antes o durante la implementación)
+## To verify on real RYM (Alonso, logged in, before or during implementation)
 
-Cada uno necesita el HTML real guardado como fixture en `test/fixtures/`:
+Each one needs the real HTML saved as a fixture in `test/fixtures/`:
 
-1. Release: selector de la sección de listas y de cada tarjeta (href de la lista, título, autor, portada).
-   ¿Hay enlace "more lists" o paginación de esa sección? Fixture: `test/fixtures/release/.../` (ya existe una
-   página de release; hay que incluir la sección de listas real).
-2. Página de lista: selectores de `Categories` (links a `/list_classifier/...`), likes (`♡ +N`), total de ítems
-   (paginación o contador), `[List<id>]`. Fixture: `test/fixtures/list/`.
-3. Listas de un usuario: URL exacta (`/~user/lists`?) y qué trae cada entrada (título, categorías, tamaño,
+1. Release: selector for the lists section and for each card (list href, title, author, cover).
+   Is there a "more lists" link or pagination for that section? Fixture: `test/fixtures/release/.../` (a release
+   page already exists; the real lists section needs to be included).
+2. List page: selectors for `Categories` (links to `/list_classifier/...`), likes (`♡ +N`), total items
+   (pagination or counter), `[List<id>]`. Fixture: `test/fixtures/list/`.
+3. A user's lists: exact URL (`/~user/lists`?) and what each entry carries (title, categories, size,
    likes). Fixture: `test/fixtures/user_lists/`.
-4. Búsqueda de listas: parámetro `searchtype` real para listas.
-5. Que un `fetch` con `credentials: include` de una página de lista devuelva HTML completo con sesión (igual
-   que `find_similar_users`).
+4. List search: the real `searchtype` parameter for lists.
+5. That a `fetch` with `credentials: include` of a list page returns full HTML with the session (same
+   as `find_similar_users`).
 
-## Qué queda al builder
+## What's left to the builder
 
-- Estructura exacta del DOM de la nueva sección y del modal de F2, siguiendo el estilo del panel actual
-  (`.rym-picker-*`, variables de tema de RYM).
-- Dónde exactamente va la sección Lists dentro del panel y cómo colapsa.
-- Textos de estado y errores (en inglés).
-- Función pura de parseo de HTML de la sección de listas y de la página de lista, con sus tests sobre los
-  fixtures reales.
-- Orden de implementación sugerido: F4 (parser de lista + caché + estrella) → F1 → F3 → F2.
-- Actualizar `TUTORIAL.md` y `CLAUDE.md` (hechos verificados, claves nuevas, semántica de Cloudflare).
+- Exact DOM structure of the new section and the F2 modal, following the current panel's style
+  (`.rym-picker-*`, RYM theme variables).
+- Where exactly the Lists section goes inside the panel and how it collapses.
+- Status and error text (in English).
+- Pure function for parsing the HTML of the lists section and of the list page, with tests against the
+  real fixtures.
+- Suggested implementation order: F4 (list parser + cache + star) → F1 → F3 → F2.
+- Update `TUTORIAL.md` and `CLAUDE.md` (verified facts, new keys, Cloudflare semantics).
 
-## Estado (2026-10-21)
+## Status (2026-10-21)
 
-Implementado en 1.3.0 (rama `lists-1.3`): parser de página de lista y de índice de usuario, caché con frescura de
-7 días y poda (las listas con estrella u override se conservan), captura pasiva al visitar una lista, estrella y
-favoritas, pestañas Curated/Unrated/Logs en el release con "Rate N unrated", botón Find lists on RYM, ventana
-Lists by compatible users, overrides de clasificación y settings (`List search type`, delay, tope).
+Implemented in 1.3.0 (branch `lists-1.3`): list page and user index parser, cache with 7-day freshness
+and pruning (starred or overridden lists are kept), passive capture when visiting a list, star and
+favorites, Curated/Unrated/Logs tabs on the release with "Rate N unrated", Find lists on RYM button,
+Lists by compatible users window, classification overrides and settings (`List search type`, delay, cap).
 
-Por verificar en RYM real:
+To verify on real RYM:
 
-- Markup de la sección de listas de la página de release (el fixture es una suposición; el parser es por anclas).
-- El valor correcto de `searchtype` para listas (`l` devolvió discos).
-- Comportamiento de Cloudflare con el delay por defecto de 3 s en tandas de 25.
+- Markup of the release page's lists section (the fixture is a guess; the parser works by anchors).
+- The correct `searchtype` value for lists (`l` returned records).
+- Cloudflare behavior with the default 3 s delay in batches of 25.
 
