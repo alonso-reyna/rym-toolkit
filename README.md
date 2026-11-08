@@ -9,7 +9,7 @@ Cómo se usa: [TUTORIAL.md](TUTORIAL.md). Contexto para retomar el desarrollo: [
 
 Con Tampermonkey instalado, abre este link y dale **Install**:
 
-https://raw.githubusercontent.com/alonso-reyna/rym-chart-picker-plus/main/rym-chart-picker-plus.user.js
+https://raw.githubusercontent.com/alonso-reyna/rym-toolkit/main/rym-chart-picker-plus.user.js
 
 El script trae `@updateURL`, así que Tampermonkey se actualiza solo cada vez que hay push a `main`
 (Dashboard → Settings → Script Update → Check Interval; o "Check for userscript updates" para forzar).

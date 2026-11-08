@@ -2,7 +2,7 @@
 # Abre el link de instalación del script (commit actual, o el SHA que le pases) en el Chrome donde está RYM.
 # Solo abre GitHub raw; no hace peticiones a rateyourmusic.com.
 sha=${1:-$(git -C "${0:A:h}/.." rev-parse HEAD)}
-url="https://raw.githubusercontent.com/alonso-reyna/rym-chart-picker-plus/$sha/rym-chart-picker-plus.user.js"
+url="https://raw.githubusercontent.com/alonso-reyna/rym-toolkit/$sha/rym-chart-picker-plus.user.js"
 print -r -- "$url"
 osascript - "$url" <<'OSA'
 on run argv

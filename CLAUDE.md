@@ -21,7 +21,7 @@ Todo el código vive en `rym-chart-picker-plus.user.js`; es un solo archivo a pr
    abre `http://localhost:8765/release/album/ecco2k/e/`, activa el panel y revisa `window.__errors` y el URL
    gris del panel. Borra `script.js` al terminar (no se versiona).
 3. En RYM real: Tampermonkey instala desde el raw de GitHub (`@updateURL` en el header, repo
-   `alonso-reyna/rym-chart-picker-plus`, rama `main`). Tras editar, **sube `@version`** (si no, Tampermonkey
+   `alonso-reyna/rym-toolkit`, rama `main`). Tras editar, **sube `@version`** (si no, Tampermonkey
    no actualiza), commit, push; luego "Check for userscript updates" y F5 en RYM.
 4. **Tras cada push, corre `tools/instalar-en-chrome.sh`** (lo pidió Alonso 2026-10-30): abre el link de instalación
    con el SHA del commit en el Chrome donde tiene RYM (los links del chat se le abren en Safari). Pon también el link en
@@ -105,6 +105,7 @@ Capturados del sitio real salvo lo marcado como no verificado.
 - `selectCompatUsers`: top N cuenta usuarios distintos y no excluidos; `compatMinScore` es opcional (default 0) y el
   flag `compatMinScoreV2` marca settings ya migrados (los viejos traían 70 y recortaban el top N).
 - El `@namespace` cambió a `alonso-reyna` en 1.1.2; una instalación vieja (`alonsoreyna`) convive como script aparte.
+- El repo se llama `rym-toolkit` desde 1.5.3 (antes `rym-chart-picker-plus`). El `@namespace` conserva el nombre viejo a propósito: cambiarlo crea una instalación duplicada. El archivo sigue siendo `rym-chart-picker-plus.user.js`.
 - Revisión GPT 2026-10-20 pendiente de atender (bajo impacto): restaurar `innerHTML` al apagar Search pierde listeners
   de RYM; no hay observer para cuando RYM re-renderiza una fila; `window.open` del fallback puede bloquearse como popup.
 
