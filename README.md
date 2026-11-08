@@ -1,6 +1,6 @@
-# RYM Chart Picker+ (1.2.0)
+# RYM Toolkit
 
-Fork de [RYM Music Chart Picker](https://github.com/Lin-808/rym-music-chart-picker) de Lin808.
+Userscript para rateyourmusic.com (en Tampermonkey aparece como "RYM Chart Picker+"). Fork de [RYM Music Chart Picker](https://github.com/Lin-808/rym-music-chart-picker) de Lin808.
 Usa la misma clave de settings, así que al reemplazar el script original no pierdes tu configuración.
 
 Cómo se usa: [TUTORIAL.md](TUTORIAL.md). Contexto para retomar el desarrollo: [CLAUDE.md](CLAUDE.md).
