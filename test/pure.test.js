@@ -520,19 +520,20 @@ assert.equal(api.chartPathForPage("/charts/top/album/all-time/", 2), "/charts/to
   assert.equal(api.buildSpotifySearchQuery("", "  E "), "E");
   assert.equal(api.buildSpotifySearchQuery("", ""), "");
 
-  assert.equal(api.spotifyTargetUrl("https://open.spotify.com", { kind: "album", id: ID }), `https://open.spotify.com/album/${ID}`);
-  assert.equal(api.spotifySearchUrl("https://open.spotify.com", "jackzebra 弓长张"), "https://open.spotify.com/search/jackzebra%20%E5%BC%93%E9%95%BF%E5%BC%A0/albums");
+  assert.equal(api.spotifyTargetUrl("https://open.spotify.com", { kind: "album", id: ID }), `https://open.spotify.com/album/${ID}?rym_play=1`);
+  assert.equal(api.spotifySearchUrl("https://open.spotify.com", "jackzebra 弓长张"), "https://open.spotify.com/search/jackzebra%20%E5%BC%93%E9%95%BF%E5%BC%A0/albums?rym_play=1");
 
   assert.deepEqual(api.parseSpotifyPath(`/album/${ID}`), { page: "album", id: ID });
   assert.deepEqual(api.parseSpotifyPath(`/intl-es/track/${TRACK}/`), { page: "track", id: TRACK });
   assert.deepEqual(api.parseSpotifyPath("/search/jackzebra%20%E5%BC%93/albums"), { page: "search", query: "jackzebra 弓" });
   assert.deepEqual(api.parseSpotifyPath("/"), { page: null });
 
-  const now = 1_000_000;
-  assert.equal(api.isSpotifyRequestFresh({ ts: now - 5000 }, now), true);
-  assert.equal(api.isSpotifyRequestFresh({ ts: now - 61000 }, now), false);
-  assert.equal(api.isSpotifyRequestFresh({ ts: now + 10 }, now), false);
-  assert.equal(api.isSpotifyRequestFresh(null, now), false);
+  assert.equal(api.hasSpotifyPlayParam("?rym_play=1"), true);
+  assert.equal(api.hasSpotifyPlayParam("?si=abc&rym_play=1"), true);
+  assert.equal(api.hasSpotifyPlayParam("?rym_play=10"), false);
+  assert.equal(api.hasSpotifyPlayParam(""), false);
+  assert.equal(api.withoutSpotifyPlayParam("?rym_play=1"), "");
+  assert.equal(api.withoutSpotifyPlayParam("?si=abc&rym_play=1"), "?si=abc");
 }
 
 console.log("all tests passed");

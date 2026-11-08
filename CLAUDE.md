@@ -143,17 +143,21 @@ Captured from the real site except where marked unverified.
 
 ## Spotify button (1.7)
 
-- "▶ Spotify" on music release pages (a "Listen" row appended to `table.album_info`) and on each music chart item
-  (`.page_charts_section_charts_item`, appended to `..._stats_media`). Asked by Alonso 2026-11-08.
-- **Unverified**: where RYM keeps the Spotify media link. `findSpotifyTarget` reads `[data-links]` JSON
-  (`{"spotify":{"<id>":{...}}}`) first, then `a[href*="spotify"]`; chart rows may have neither. Without a link the
-  button searches `artist title` (`/search/<q>/albums`); release fallback parses the tab title "X by Y (Type, …)".
-- Click stores `{target|query, ts}` under `rym_chart_picker_spotify_play_v1` and opens a tab named `rym-spotify`.
-  The script also runs on `open.spotify.com/*`: a fresh request (< 60 s) clicks
-  `[data-testid="action-bar-row"] [data-testid="play-button"]` once (one retry if still "Play"), or on a search page
-  opens the first `/album/` link outside nav/aside/player bar. Spotify selectors are unverified; Chrome may block autoplay.
-- Smoke test: `/spotify/...` fixtures stand in for Spotify on localhost; `stub.js` persists the play request in
-  `localStorage` so it survives the jump between fixtures.
+- "▶ Spotify" on music release pages (a "Listen" row appended to `table.album_info`) and on each music chart item.
+  Asked by Alonso 2026-11-08.
+- **Verified (saved Crybaby release, 2026-11-08)**: `#media_link_button_container_top[data-links]` holds
+  `{"spotify":{"<id>":{"default":true,"type":"album"},"<id2>":{"for":["CA","US"],"type":"album"}},...}` and RYM also
+  renders `a.ui_media_link_btn_spotify[href^="https://open.spotify.com/album/"]`. `findSpotifyTarget` reads both.
+- **Unverified**: music chart row markup. 1.7.0 found no rows on Alonso's chart; 1.7.1 also takes `div#pos<N>`,
+  `a[href^="/release/"]`/`a[href^="/artist/"]` and a MutationObserver. Rows may lack a Spotify link: then the button
+  searches `artist title` (`/search/<q>/albums`).
+- The play signal travels as `?rym_play=1` on the Spotify URL. A GM value set on RYM did **not** reach the new
+  Spotify tab (1.7.0 opened but did not play). Spotify keeps the query string but drops `#hash`.
+- On open.spotify.com (verified 2026-11-08): the album play button is
+  `[data-testid="action-bar-row"] [data-testid="play-button"]` (`aria-label` "Play"/"Pause"); a programmatic click
+  plays even without user activation in that tab. Search page: first `/album/` link outside nav/aside/player bar.
+  The script logs `[RYM Toolkit] Spotify: …` to the console and strips `rym_play` after playing.
+- Smoke test: `/spotify/...` fixtures stand in for Spotify on localhost.
 
 ## Roadmap 1.2 (agreed, not started)
 

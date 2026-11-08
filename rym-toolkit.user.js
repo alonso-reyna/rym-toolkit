@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RYM Chart Picker+
 // @namespace    https://github.com/alonso-reyna/rym-chart-picker-plus
-// @version      1.7.0
+// @version      1.7.1
 // @homepageURL  https://github.com/alonso-reyna/rym-toolkit
 // @supportURL   https://github.com/alonso-reyna/rym-toolkit/issues
 // @updateURL    https://raw.githubusercontent.com/alonso-reyna/rym-toolkit/main/rym-toolkit.user.js
@@ -1419,7 +1419,6 @@ se|Northern Sami|Davvisámegiella|
   // (an anchor to open.spotify.com, or the data-links JSON of the media button container). Without one, the
   // button searches artist + title on Spotify and the Spotify side opens the first album.
   const SPOTIFY_ID_RE = /^[A-Za-z0-9]{22}$/;
-  const SPOTIFY_REQUEST_MAX_AGE_MS = 60 * 1000;
 
   function spotifyTargetFromUrl(href) {
     const m = /(?:open\.spotify\.com\/(?:intl-[a-z-]+\/)?|spotify:)(album|track)[/:]([A-Za-z0-9]{22})(?![A-Za-z0-9])/i.exec(href || "");
@@ -1471,12 +1470,26 @@ se|Northern Sami|Davvisámegiella|
     return [strip(artist), strip(title)].filter(Boolean).join(" ");
   }
 
+  // ?rym_play=1 tells the Spotify tab to press play. Spotify keeps the query string but drops the hash
+  // (checked on open.spotify.com 2026-11-08), and a cross-tab GM value alone did not reach the new tab.
+  const SPOTIFY_PLAY_PARAM = "rym_play";
+
   function spotifyTargetUrl(base, target) {
-    return `${base}/${target.kind}/${target.id}`;
+    return `${base}/${target.kind}/${target.id}?${SPOTIFY_PLAY_PARAM}=1`;
   }
 
   function spotifySearchUrl(base, query) {
-    return `${base}/search/${encodeURIComponent(query)}/albums`;
+    return `${base}/search/${encodeURIComponent(query)}/albums?${SPOTIFY_PLAY_PARAM}=1`;
+  }
+
+  function hasSpotifyPlayParam(search) {
+    return new RegExp(`(?:^|[?&])${SPOTIFY_PLAY_PARAM}=1(?:&|$)`).test(String(search || ""));
+  }
+
+  function withoutSpotifyPlayParam(search) {
+    const rest = String(search || "").replace(/^\?/, "").split("&")
+      .filter(part => part && part.split("=")[0] !== SPOTIFY_PLAY_PARAM);
+    return rest.length ? `?${rest.join("&")}` : "";
   }
 
   function parseSpotifyPath(pathname) {
@@ -1492,15 +1505,10 @@ se|Northern Sami|Davvisámegiella|
     return { page: null };
   }
 
-  function isSpotifyRequestFresh(req, now) {
-    if (!req || typeof req.ts !== "number") return false;
-    const age = now - req.ts;
-    return age >= 0 && age < SPOTIFY_REQUEST_MAX_AGE_MS;
-  }
 
   const PURE_API = {
     spotifyTargetFromUrl, spotifyTargetFromMediaLinks, findSpotifyTarget, parseReleaseDocTitle, buildSpotifySearchQuery,
-    spotifyTargetUrl, spotifySearchUrl, parseSpotifyPath, isSpotifyRequestFresh,
+    spotifyTargetUrl, spotifySearchUrl, hasSpotifyPlayParam, withoutSpotifyPlayParam, parseSpotifyPath,
     rymSlug, slugFromGenreHref, FILM_GENRE_SLUG_SEED, filmGenreNameFromHref, filmGenreSlug, resolveFilmGenreClickSlug, parseFilmGenreSlugs, mergeFilmGenreSlugs,
     extractYear, extractFilmYear,
     buildDuckyUrl, parseLetterboxdOgTitle, labelFromSlug, typeFromText, typeLabel,
@@ -1527,8 +1535,6 @@ se|Northern Sami|Davvisámegiella|
   // Spotify autoplay (open.spotify.com pages return here)
   // ---------------------------------------------------------------------------
 
-  // A "▶ Spotify" click on RYM stores a play request; the Spotify tab it opens consumes it once.
-  const SPOTIFY_PLAY_KEY = "rym_chart_picker_spotify_play_v1";
   // Test-only branch: localhost /spotify/... stands in for open.spotify.com.
   const isLocalFixture = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
   const SPOTIFY_BASE = isLocalFixture ? `${location.origin}/spotify` : "https://open.spotify.com";
@@ -1539,71 +1545,79 @@ se|Northern Sami|Davvisámegiella|
     return;
   }
 
+  // Runs once per page load; SPA navigation inside Spotify never re-triggers it.
   function runSpotifyAutoplay() {
+    const log = (...args) => console.info("[RYM Toolkit] Spotify:", ...args);
+    // The loaded URL, in case Spotify rewrote the address before this script ran.
+    const navEntry = performance.getEntriesByType ? performance.getEntriesByType("navigation")[0] : null;
+    let loadedSearch = "";
+    try { loadedSearch = navEntry ? new URL(navEntry.name).search : ""; } catch { /* keep empty */ }
+    if (!hasSpotifyPlayParam(location.search) && !hasSpotifyPlayParam(loadedSearch)) return;
+
     const startedAt = Date.now();
     const DEADLINE_MS = 20000;
     // Sidebars and the player bar also have album links and play buttons; only the main view counts.
     const OUTSIDE_MAIN = 'nav, aside, footer, [data-testid="now-playing-bar"], [data-testid="left-sidebar"], #Desktop_LeftSidebar_Id';
     const inMain = node => !node.closest(OUTSIDE_MAIN);
     const stripFixturePrefix = path => (isLocalFixture ? path.replace(/^\/spotify(?=\/)/, "") : path);
+    const startPage = parseSpotifyPath(stripFixturePrefix(location.pathname));
     let clickedAt = 0;
     let retried = false;
+    log("play request for", startPage.page, startPage.id || startPage.query || "");
 
-    const finish = () => {
+    const finish = reason => {
       clearInterval(timer);
-      const req = GM_getValue(SPOTIFY_PLAY_KEY, null);
-      if (req && isSpotifyRequestFresh(req, Date.now())) GM_setValue(SPOTIFY_PLAY_KEY, null);
+      log(reason);
+      // Drop ?rym_play=1 so a reload does not press play again.
+      if (hasSpotifyPlayParam(location.search)) {
+        try {
+          history.replaceState(history.state, "", location.pathname + withoutSpotifyPlayParam(location.search) + location.hash);
+        } catch { /* leave the URL alone */ }
+      }
     };
 
-    const findPlayButton = () => {
-      const inBar = document.querySelector('[data-testid="action-bar-row"] [data-testid="play-button"]');
-      if (inBar) return inBar;
-      return Array.from(document.querySelectorAll('[data-testid="play-button"]')).find(inMain) || null;
-    };
+    // Album/track page: the big green button in the action bar (checked on open.spotify.com 2026-11-08).
+    const findPlayButton = () => document.querySelector('[data-testid="action-bar-row"] [data-testid="play-button"]');
     const labelOf = btn => btn.getAttribute("aria-label") || "";
     const isPauseLabel = label => /\b(pause|pausar)\b/i.test(label);
     const isPlayLabel = label => /^(play|reproducir)\b/i.test(label);
 
     const tick = () => {
-      if (Date.now() - startedAt > DEADLINE_MS) return finish();
+      if (Date.now() - startedAt > DEADLINE_MS) return finish(clickedAt ? "clicked play, state unknown" : "gave up: no play button or album found");
+      const here = parseSpotifyPath(stripFixturePrefix(location.pathname));
       if (clickedAt) {
         // One retry if the button still says Play after the click (player not ready yet).
         const btn = findPlayButton();
-        if (!btn || isPauseLabel(labelOf(btn))) return finish();
+        if (!btn || isPauseLabel(labelOf(btn))) return finish("playing");
         if (!retried && Date.now() - clickedAt > 2500 && isPlayLabel(labelOf(btn))) {
           retried = true;
+          log("still paused, clicking play again");
           btn.click();
         }
-        if (Date.now() - clickedAt > 6000) finish();
+        if (Date.now() - clickedAt > 6000) finish("clicked play twice, still paused");
         return;
       }
-      const req = GM_getValue(SPOTIFY_PLAY_KEY, null);
-      // The request may reach this tab a moment after it loads; wait a few seconds for it.
-      if (!isSpotifyRequestFresh(req, Date.now())) {
-        if (Date.now() - startedAt > 5000) clearInterval(timer);
-        return;
-      }
-      const here = parseSpotifyPath(stripFixturePrefix(location.pathname));
-      if (req.target && here.page === req.target.kind && here.id === req.target.id) {
+      if (here.page === "album" || here.page === "track") {
+        if (here.id !== startPage.id) return finish("navigated away before playing");
         const btn = findPlayButton();
         if (!btn) return;
-        GM_setValue(SPOTIFY_PLAY_KEY, null);
-        if (isPauseLabel(labelOf(btn))) return finish();
+        if (isPauseLabel(labelOf(btn))) return finish("already playing");
         btn.click();
         clickedAt = Date.now();
         return;
       }
-      if (!req.target && req.query && here.page === "search") {
+      if (here.page === "search" && startPage.page === "search") {
         const link = Array.from(document.querySelectorAll('a[href*="/album/"]'))
           .filter(inMain)
           .map(a => parseSpotifyPath(stripFixturePrefix(new URL(a.getAttribute("href"), location.href).pathname)))
           .find(p => p.page === "album");
         if (!link) return;
-        const target = { kind: "album", id: link.id };
-        GM_setValue(SPOTIFY_PLAY_KEY, { target, query: req.query, ts: Date.now() });
         clearInterval(timer);
-        location.assign(spotifyTargetUrl(SPOTIFY_BASE, target));
+        log("first album in search:", link.id);
+        location.assign(spotifyTargetUrl(SPOTIFY_BASE, { kind: "album", id: link.id }));
+        return;
       }
+      finish("not an album, track or search page");
     };
     const timer = setInterval(tick, 300);
     tick();
@@ -1686,9 +1700,6 @@ se|Northern Sami|Davvisámegiella|
     a.title = target ? "Open on Spotify and play" : `No Spotify link here: search "${query}" and play the first album`;
     // Named target: later clicks reuse the same Spotify tab when the browser allows it.
     a.target = "rym-spotify";
-    const remember = () => GM_setValue(SPOTIFY_PLAY_KEY, { target, query: target ? "" : query, ts: Date.now() });
-    a.addEventListener("click", remember);
-    a.addEventListener("auxclick", event => { if (event.button === 1) remember(); });
     return a;
   }
 
@@ -1723,16 +1734,37 @@ se|Northern Sami|Davvisámegiella|
       const original = node.querySelector(".ui_name_locale_original");
       return cleanText((original || node).textContent);
     };
-    for (const item of document.querySelectorAll(".page_charts_section_charts_item")) {
-      if (item.querySelector(".rym-spotify-btn")) continue;
-      const titleLink = item.querySelector(".page_charts_section_charts_item_link");
-      const artists = Array.from(item.querySelectorAll(".page_charts_section_charts_item_credited_links_primary a")).map(nameOf);
-      const query = buildSpotifySearchQuery(artists.join(" "), nameOf(titleLink));
-      const target = findSpotifyTarget(item);
-      if (!target && !query) continue;
-      const host = item.querySelector(".page_charts_section_charts_item_stats_media") || item.querySelector(".page_charts_section_charts_item_info") || item;
-      host.appendChild(makeSpotifyButton(target, query, "rym-spotify-chart"));
-    }
+    // Chart rows: class from the film chart capture; music rows are not captured, so div#pos<N> and plain
+    // /release/ + /artist/ links are fallbacks. Rows rendered after load are picked up by the observer.
+    const decorateChartRows = () => {
+      const rows = new Set(document.querySelectorAll(".page_charts_section_charts_item"));
+      for (const wrap of document.querySelectorAll('div[id^="pos"]')) {
+        if (chartPositionFromId(wrap.id) && !wrap.querySelector(".page_charts_section_charts_item")) rows.add(wrap);
+      }
+      for (const item of rows) {
+        if (item.querySelector(".rym-spotify-btn")) continue;
+        const titleLink = item.querySelector(".page_charts_section_charts_item_link, a[href^='/release/']");
+        if (!titleLink) continue;
+        let artistLinks = Array.from(item.querySelectorAll(".page_charts_section_charts_item_credited_links_primary a"));
+        if (!artistLinks.length) artistLinks = Array.from(item.querySelectorAll("a[href^='/artist/']"));
+        const query = buildSpotifySearchQuery(artistLinks.map(nameOf).join(" "), nameOf(titleLink));
+        const target = findSpotifyTarget(item);
+        if (!target && !query) continue;
+        const host = item.querySelector(".page_charts_section_charts_item_stats_media")
+          || item.querySelector(".page_charts_section_charts_item_info")
+          || titleLink.parentElement
+          || item;
+        host.appendChild(makeSpotifyButton(target, query, "rym-spotify-chart"));
+      }
+    };
+    decorateChartRows();
+    let pending = false;
+    const observer = new MutationObserver(() => {
+      if (pending) return;
+      pending = true;
+      setTimeout(() => { pending = false; decorateChartRows(); }, 300);
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
   }
 
   if (document.getElementById("rym-picker-panel")) {
