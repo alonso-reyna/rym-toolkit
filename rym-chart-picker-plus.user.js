@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RYM Chart Picker+
 // @namespace    https://github.com/alonso-reyna/rym-chart-picker-plus
-// @version      1.5.1
+// @version      1.5.2
 // @homepageURL  https://github.com/alonso-reyna/rym-chart-picker-plus
 // @supportURL   https://github.com/alonso-reyna/rym-chart-picker-plus/issues
 // @updateURL    https://raw.githubusercontent.com/alonso-reyna/rym-chart-picker-plus/main/rym-chart-picker-plus.user.js
@@ -2149,18 +2149,6 @@ se|Northern Sami|Davvisámegiella|
       box-shadow: 0 6px 18px rgba(0,0,0,.35);
     }
 
-    .rym-picker-footer-links { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; padding-top: 2px; }
-    .rym-picker-footer-link {
-      display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; min-height: 32px;
-      padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--rym-text) !important;
-      text-decoration: none !important; line-height: 1; overflow: hidden; opacity: .92;
-    }
-    .rym-picker-footer-link:hover { background: var(--rym-bg-3); opacity: 1; transform: scale(1.06); }
-    .rym-picker-footer-icon { width: 19px; height: 19px; display: inline-flex; align-items: center; justify-content: center; color: var(--rym-text); fill: currentColor; }
-    .rym-picker-footer-icon svg { width: 19px; height: 19px; display: block; fill: currentColor; }
-    .rym-picker-footer-img { width: 19px; height: 19px; display: block; object-fit: contain; }
-    .rym-picker-footer-img-rym { border-radius: 50%; }
-
     .rym-picker-small-note { color: var(--rym-muted); font-size: 12px; margin-top: 9px; line-height: 1.35; }
 
     .rym-picker-type-presets {
@@ -2572,17 +2560,6 @@ se|Northern Sami|Davvisámegiella|
           <span class="rym-picker-setting-title">Selection highlight color</span>
           <div class="rym-color-palette" id="rym-highlight-color-palette"></div>
         </div>
-      </div>
-
-      <div class="rym-picker-footer-links" aria-label="Project links">
-        <a class="rym-picker-footer-link" href="https://github.com/Lin-808/rym-music-chart-picker" target="_blank" rel="noopener noreferrer" title="Original script by Lin808" aria-label="Original script by Lin808">
-          <span class="rym-picker-footer-icon" aria-hidden="true">
-            <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.65 7.65 0 0 1 8 3.86c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg>
-          </span>
-        </a>
-        <a class="rym-picker-footer-link" href="https://rateyourmusic.com/~lin808" target="_blank" rel="noopener noreferrer" title="Lin808 on RYM" aria-label="Lin808 on RYM">
-          <img class="rym-picker-footer-img rym-picker-footer-img-rym" src="https://upload.wikimedia.org/wikipedia/commons/d/d0/Rate_Your_Music_logo.svg" alt="" loading="lazy">
-        </a>
       </div>
     </div>
   `;
