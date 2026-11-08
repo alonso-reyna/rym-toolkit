@@ -345,7 +345,7 @@ se|Northern Sami|Davvisámegiella|
     compatIncludeMe: false,
     compatExcluded: [],
     filmCompatSource: "film", // film | music | both (film mode only)
-    listSearchType: "s", // verificado 2026-10-22: RYMsearch.types → Lists = "s"
+    listSearchType: "s", // verified 2026-10-22: RYMsearch.types → Lists = "s"
     listFetchDelayMs: 3000,
     listFetchMax: 25
   };
