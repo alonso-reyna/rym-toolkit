@@ -481,4 +481,58 @@ assert.equal(api.chartPathForPage("/charts/top/album/all-time/", 2), "/charts/to
   assert.equal(api.chartEntryForPosition(4, [1, 2, 4, 6]), 4);
 }
 
+// Spotify button
+{
+  const ID = "5cXMOGY9MiCfF3IVtfVeTi";
+  const TRACK = "1234567890abcdefghijkl";
+  assert.deepEqual(api.spotifyTargetFromUrl(`https://open.spotify.com/album/${ID}`), { kind: "album", id: ID });
+  assert.deepEqual(api.spotifyTargetFromUrl(`https://open.spotify.com/intl-es/album/${ID}?si=x`), { kind: "album", id: ID });
+  assert.deepEqual(api.spotifyTargetFromUrl(`spotify:track:${TRACK}`), { kind: "track", id: TRACK });
+  assert.equal(api.spotifyTargetFromUrl(`https://open.spotify.com/artist/${ID}`), null);
+  assert.equal(api.spotifyTargetFromUrl(`https://open.spotify.com/album/${ID}xx`), null);
+  assert.equal(api.spotifyTargetFromUrl(""), null);
+
+  assert.deepEqual(api.spotifyTargetFromMediaLinks(JSON.stringify({ spotify: { [ID]: { default: true } }, youtube: { abc: {} } })), { kind: "album", id: ID });
+  assert.deepEqual(api.spotifyTargetFromMediaLinks({ spotify: { [TRACK]: { type: "track" }, [ID]: { type: "album" } } }), { kind: "album", id: ID });
+  assert.deepEqual(api.spotifyTargetFromMediaLinks({ spotify: { [TRACK]: { type: "track" } } }), { kind: "track", id: TRACK });
+  assert.equal(api.spotifyTargetFromMediaLinks("{not json"), null);
+  assert.equal(api.spotifyTargetFromMediaLinks({ youtube: { a: {} } }), null);
+  assert.equal(api.spotifyTargetFromMediaLinks({ spotify: { short: {} } }), null);
+
+  const fakeRoot = (dataLinks, hrefs) => ({
+    querySelectorAll(sel) {
+      if (sel === "[data-links]") return dataLinks.map(v => ({ getAttribute: () => v }));
+      if (sel === 'a[href*="spotify"]') return hrefs.map(v => ({ getAttribute: () => v }));
+      throw new Error("unsupported selector " + sel);
+    }
+  });
+  assert.deepEqual(api.findSpotifyTarget(fakeRoot([JSON.stringify({ spotify: { [ID]: {} } })], [`https://open.spotify.com/album/${TRACK}`])), { kind: "album", id: ID });
+  assert.deepEqual(api.findSpotifyTarget(fakeRoot(["{}"], [`https://open.spotify.com/track/${TRACK}`, `https://open.spotify.com/album/${ID}`])), { kind: "album", id: ID });
+  assert.deepEqual(api.findSpotifyTarget(fakeRoot([], [`https://open.spotify.com/track/${TRACK}`])), { kind: "track", id: TRACK });
+  assert.equal(api.findSpotifyTarget(fakeRoot([], [])), null);
+  assert.equal(api.findSpotifyTarget(null), null);
+
+  assert.deepEqual(api.parseReleaseDocTitle("弓长张 by jackzebra (EP, Trap): Reviews, Ratings, Credits, Song list - Rate Your Music"), { title: "弓长张", artist: "jackzebra" });
+  assert.deepEqual(api.parseReleaseDocTitle("Stand by Me by Ben E. King (Single, Soul): Reviews"), { title: "Stand by Me", artist: "Ben E. King" });
+  assert.equal(api.parseReleaseDocTitle("Rate Your Music"), null);
+
+  assert.equal(api.buildSpotifySearchQuery("jackzebra", "Gong chang zhang [弓长张]"), "jackzebra Gong chang zhang");
+  assert.equal(api.buildSpotifySearchQuery("", "  E "), "E");
+  assert.equal(api.buildSpotifySearchQuery("", ""), "");
+
+  assert.equal(api.spotifyTargetUrl("https://open.spotify.com", { kind: "album", id: ID }), `https://open.spotify.com/album/${ID}`);
+  assert.equal(api.spotifySearchUrl("https://open.spotify.com", "jackzebra 弓长张"), "https://open.spotify.com/search/jackzebra%20%E5%BC%93%E9%95%BF%E5%BC%A0/albums");
+
+  assert.deepEqual(api.parseSpotifyPath(`/album/${ID}`), { page: "album", id: ID });
+  assert.deepEqual(api.parseSpotifyPath(`/intl-es/track/${TRACK}/`), { page: "track", id: TRACK });
+  assert.deepEqual(api.parseSpotifyPath("/search/jackzebra%20%E5%BC%93/albums"), { page: "search", query: "jackzebra 弓" });
+  assert.deepEqual(api.parseSpotifyPath("/"), { page: null });
+
+  const now = 1_000_000;
+  assert.equal(api.isSpotifyRequestFresh({ ts: now - 5000 }, now), true);
+  assert.equal(api.isSpotifyRequestFresh({ ts: now - 61000 }, now), false);
+  assert.equal(api.isSpotifyRequestFresh({ ts: now + 10 }, now), false);
+  assert.equal(api.isSpotifyRequestFresh(null, now), false);
+}
+
 console.log("all tests passed");

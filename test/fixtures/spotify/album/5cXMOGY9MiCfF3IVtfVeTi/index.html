@@ -1,0 +1,13 @@
+<!doctype html><html><head><meta charset="utf-8"><title>spotify album</title></head><body>
+<nav><a href="/album/DECOYdecoyDECOYdecoy00">library</a><button data-testid="play-button" aria-label="Play decoy" onclick="window.__decoy=true"></button></nav>
+<main id="main"></main>
+<script>
+// The player renders late, like Spotify's SPA.
+setTimeout(() => {
+  document.getElementById("main").innerHTML = '<div data-testid="action-bar-row"><button data-testid="play-button" aria-label="Play">play</button></div>';
+  const b = document.querySelector('[data-testid="action-bar-row"] button');
+  b.addEventListener("click", () => { window.__plays = (window.__plays || 0) + 1; b.setAttribute("aria-label", "Pause"); });
+}, 800);
+</script>
+<script src="/stub.js"></script><script src="/script.js"></script>
+</body></html>

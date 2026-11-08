@@ -174,6 +174,17 @@ On film pages the settings don't show "Default release type" or the **Lists** se
 first DuckDuckGo result (no requests from the script). The **search** link shows the list of results in case
 the first one isn't the right one.
 
+## 10b. Play on Spotify (1.7)
+
+- On a music release there is a **Listen** row at the end of the info table with a green **▶ Spotify** button. On a
+  music chart every entry gets a smaller **▶ Spotify** next to its rating.
+- Click it: Spotify opens the album in a tab and presses play by itself (within ~20 s, once the player loads).
+  Later clicks try to reuse that same Spotify tab.
+- **Green** = RYM had the Spotify link, so it is the right album. **Outlined** = no link on the page: it searches
+  "artist + title" on Spotify and plays the first album found, which can be the wrong one with odd titles.
+- If Spotify opens but doesn't play, Chrome blocked autoplay for that tab: press play once and it usually works
+  from then on.
+
 ## 11. If something goes wrong
 
 - The chart opens the general ranking (OK Computer, To Pimp a Butterfly…): the filter wasn't applied. Look at the

@@ -141,6 +141,20 @@ Captured from the real site except where marked unverified.
 - 1.5.1 (asked by Alonso): on charts the panel is anchored to the left of RYM's "Share" button (found by text,
   markup not captured), so it does not cover "Go to Recommendations". Without Share, it stays in the default spot (118px / 22px).
 
+## Spotify button (1.7)
+
+- "▶ Spotify" on music release pages (a "Listen" row appended to `table.album_info`) and on each music chart item
+  (`.page_charts_section_charts_item`, appended to `..._stats_media`). Asked by Alonso 2026-11-08.
+- **Unverified**: where RYM keeps the Spotify media link. `findSpotifyTarget` reads `[data-links]` JSON
+  (`{"spotify":{"<id>":{...}}}`) first, then `a[href*="spotify"]`; chart rows may have neither. Without a link the
+  button searches `artist title` (`/search/<q>/albums`); release fallback parses the tab title "X by Y (Type, …)".
+- Click stores `{target|query, ts}` under `rym_chart_picker_spotify_play_v1` and opens a tab named `rym-spotify`.
+  The script also runs on `open.spotify.com/*`: a fresh request (< 60 s) clicks
+  `[data-testid="action-bar-row"] [data-testid="play-button"]` once (one retry if still "Play"), or on a search page
+  opens the first `/album/` link outside nav/aside/player bar. Spotify selectors are unverified; Chrome may block autoplay.
+- Smoke test: `/spotify/...` fixtures stand in for Spotify on localhost; `stub.js` persists the play request in
+  `localStorage` so it survives the jump between fixtures.
+
 ## Roadmap 1.2 (agreed, not started)
 
 Saved presets · basket that persists across records · exclusion with Shift+click (`-slug`) · keyboard shortcuts ·

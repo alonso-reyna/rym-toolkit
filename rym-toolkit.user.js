@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         RYM Chart Picker+
 // @namespace    https://github.com/alonso-reyna/rym-chart-picker-plus
-// @version      1.6.0
+// @version      1.7.0
 // @homepageURL  https://github.com/alonso-reyna/rym-toolkit
 // @supportURL   https://github.com/alonso-reyna/rym-toolkit/issues
 // @updateURL    https://raw.githubusercontent.com/alonso-reyna/rym-toolkit/main/rym-toolkit.user.js
 // @downloadURL  https://raw.githubusercontent.com/alonso-reyna/rym-toolkit/main/rym-toolkit.user.js
-// @description  Pick release or film metadata on RYM, edit charts in place, filter by your most compatible users, open a matching chart, and jump between RYM and Letterboxd. Fork of Lin808's RYM Music Chart Picker.
+// @description  Pick release or film metadata on RYM, edit charts in place, filter by your most compatible users, open a matching chart, jump between RYM and Letterboxd, and play a release on Spotify. Fork of Lin808's RYM Music Chart Picker.
 // @author       alonsoreyna (fork of Lin808)
 // @match        https://rateyourmusic.com/release/*
 // @match        https://www.rateyourmusic.com/release/*
@@ -22,6 +22,7 @@
 // @match        https://www.rateyourmusic.com/find_similar_users*
 // @match        https://rateyourmusic.com/list/*
 // @match        https://www.rateyourmusic.com/list/*
+// @match        https://open.spotify.com/*
 // @grant        GM_addStyle
 // @grant        GM_getValue
 // @grant        GM_setValue
@@ -1414,7 +1415,92 @@ se|Northern Sami|Davvisámegiella|
     return below.length ? Math.max(...below) : null;
   }
 
+  // "▶ Spotify" on music releases and chart rows. Not verified on RYM: where the Spotify media link lives
+  // (an anchor to open.spotify.com, or the data-links JSON of the media button container). Without one, the
+  // button searches artist + title on Spotify and the Spotify side opens the first album.
+  const SPOTIFY_ID_RE = /^[A-Za-z0-9]{22}$/;
+  const SPOTIFY_REQUEST_MAX_AGE_MS = 60 * 1000;
+
+  function spotifyTargetFromUrl(href) {
+    const m = /(?:open\.spotify\.com\/(?:intl-[a-z-]+\/)?|spotify:)(album|track)[/:]([A-Za-z0-9]{22})(?![A-Za-z0-9])/i.exec(href || "");
+    return m ? { kind: m[1].toLowerCase(), id: m[2] } : null;
+  }
+
+  // data-links looks like {"spotify":{"<id>":{"type":"album","default":true}}, "youtube":{...}} (assumed shape).
+  function spotifyTargetFromMediaLinks(raw) {
+    let data = raw;
+    if (typeof raw === "string") {
+      try { data = JSON.parse(raw); } catch { return null; }
+    }
+    const sp = data && typeof data === "object" ? data.spotify : null;
+    if (!sp || typeof sp !== "object") return null;
+    const pairs = Array.isArray(sp) ? sp.map(v => [v && v.id, v]) : Object.entries(sp);
+    const found = pairs
+      .map(([id, meta]) => ({ id: String(id || ""), meta: meta && typeof meta === "object" ? meta : {} }))
+      .filter(e => SPOTIFY_ID_RE.test(e.id))
+      .map(e => ({ ...e, kind: /track/i.test(String(e.meta.type || "")) ? "track" : "album" }));
+    if (!found.length) return null;
+    const pick = found.find(e => e.kind === "album" && e.meta.default)
+      || found.find(e => e.kind === "album")
+      || found[0];
+    return { kind: pick.kind, id: pick.id };
+  }
+
+  // Media container first (data-links), then anchors; an album beats a track.
+  function findSpotifyTarget(root) {
+    if (!root || typeof root.querySelectorAll !== "function") return null;
+    for (const node of root.querySelectorAll("[data-links]")) {
+      const t = spotifyTargetFromMediaLinks(node.getAttribute("data-links"));
+      if (t) return t;
+    }
+    const fromAnchors = Array.from(root.querySelectorAll('a[href*="spotify"]'))
+      .map(a => spotifyTargetFromUrl(a.getAttribute("href")))
+      .filter(Boolean);
+    return fromAnchors.find(t => t.kind === "album") || fromAnchors[0] || null;
+  }
+
+  // Tab title: "弓长张 by jackzebra (EP, Trap): Reviews, Ratings, Credits, Song list - Rate Your Music".
+  function parseReleaseDocTitle(text) {
+    const m = /^(.+) by (.+?) \([^()]*\)/.exec(cleanText(text));
+    return m ? { title: m[1].trim(), artist: m[2].trim() } : null;
+  }
+
+  // "Gong chang zhang [弓长张]": the bracketed part is dropped; the artist name carries the search.
+  function buildSpotifySearchQuery(artist, title) {
+    const strip = s => cleanText(String(s || "").replace(/\[[^\]]*\]/g, " "));
+    return [strip(artist), strip(title)].filter(Boolean).join(" ");
+  }
+
+  function spotifyTargetUrl(base, target) {
+    return `${base}/${target.kind}/${target.id}`;
+  }
+
+  function spotifySearchUrl(base, query) {
+    return `${base}/search/${encodeURIComponent(query)}/albums`;
+  }
+
+  function parseSpotifyPath(pathname) {
+    const p = String(pathname || "").replace(/^\/intl-[a-z-]+(?=\/)/i, "");
+    let m = /^\/(album|track)\/([A-Za-z0-9]{22})(?:[/?#]|$)/.exec(p);
+    if (m) return { page: m[1], id: m[2] };
+    m = /^\/search\/([^/]+)/.exec(p);
+    if (m) {
+      let query = m[1];
+      try { query = decodeURIComponent(query); } catch { /* keep raw */ }
+      return { page: "search", query };
+    }
+    return { page: null };
+  }
+
+  function isSpotifyRequestFresh(req, now) {
+    if (!req || typeof req.ts !== "number") return false;
+    const age = now - req.ts;
+    return age >= 0 && age < SPOTIFY_REQUEST_MAX_AGE_MS;
+  }
+
   const PURE_API = {
+    spotifyTargetFromUrl, spotifyTargetFromMediaLinks, findSpotifyTarget, parseReleaseDocTitle, buildSpotifySearchQuery,
+    spotifyTargetUrl, spotifySearchUrl, parseSpotifyPath, isSpotifyRequestFresh,
     rymSlug, slugFromGenreHref, FILM_GENRE_SLUG_SEED, filmGenreNameFromHref, filmGenreSlug, resolveFilmGenreClickSlug, parseFilmGenreSlugs, mergeFilmGenreSlugs,
     extractYear, extractFilmYear,
     buildDuckyUrl, parseLetterboxdOgTitle, labelFromSlug, typeFromText, typeLabel,
@@ -1435,6 +1521,92 @@ se|Northern Sami|Davvisámegiella|
   if (typeof module !== "undefined" && module.exports) {
     module.exports = PURE_API;
     return;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Spotify autoplay (open.spotify.com pages return here)
+  // ---------------------------------------------------------------------------
+
+  // A "▶ Spotify" click on RYM stores a play request; the Spotify tab it opens consumes it once.
+  const SPOTIFY_PLAY_KEY = "rym_chart_picker_spotify_play_v1";
+  // Test-only branch: localhost /spotify/... stands in for open.spotify.com.
+  const isLocalFixture = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+  const SPOTIFY_BASE = isLocalFixture ? `${location.origin}/spotify` : "https://open.spotify.com";
+  const isSpotify = location.hostname === "open.spotify.com" || (isLocalFixture && location.pathname.startsWith("/spotify/"));
+
+  if (isSpotify) {
+    runSpotifyAutoplay();
+    return;
+  }
+
+  function runSpotifyAutoplay() {
+    const startedAt = Date.now();
+    const DEADLINE_MS = 20000;
+    // Sidebars and the player bar also have album links and play buttons; only the main view counts.
+    const OUTSIDE_MAIN = 'nav, aside, footer, [data-testid="now-playing-bar"], [data-testid="left-sidebar"], #Desktop_LeftSidebar_Id';
+    const inMain = node => !node.closest(OUTSIDE_MAIN);
+    const stripFixturePrefix = path => (isLocalFixture ? path.replace(/^\/spotify(?=\/)/, "") : path);
+    let clickedAt = 0;
+    let retried = false;
+
+    const finish = () => {
+      clearInterval(timer);
+      const req = GM_getValue(SPOTIFY_PLAY_KEY, null);
+      if (req && isSpotifyRequestFresh(req, Date.now())) GM_setValue(SPOTIFY_PLAY_KEY, null);
+    };
+
+    const findPlayButton = () => {
+      const inBar = document.querySelector('[data-testid="action-bar-row"] [data-testid="play-button"]');
+      if (inBar) return inBar;
+      return Array.from(document.querySelectorAll('[data-testid="play-button"]')).find(inMain) || null;
+    };
+    const labelOf = btn => btn.getAttribute("aria-label") || "";
+    const isPauseLabel = label => /\b(pause|pausar)\b/i.test(label);
+    const isPlayLabel = label => /^(play|reproducir)\b/i.test(label);
+
+    const tick = () => {
+      if (Date.now() - startedAt > DEADLINE_MS) return finish();
+      if (clickedAt) {
+        // One retry if the button still says Play after the click (player not ready yet).
+        const btn = findPlayButton();
+        if (!btn || isPauseLabel(labelOf(btn))) return finish();
+        if (!retried && Date.now() - clickedAt > 2500 && isPlayLabel(labelOf(btn))) {
+          retried = true;
+          btn.click();
+        }
+        if (Date.now() - clickedAt > 6000) finish();
+        return;
+      }
+      const req = GM_getValue(SPOTIFY_PLAY_KEY, null);
+      // The request may reach this tab a moment after it loads; wait a few seconds for it.
+      if (!isSpotifyRequestFresh(req, Date.now())) {
+        if (Date.now() - startedAt > 5000) clearInterval(timer);
+        return;
+      }
+      const here = parseSpotifyPath(stripFixturePrefix(location.pathname));
+      if (req.target && here.page === req.target.kind && here.id === req.target.id) {
+        const btn = findPlayButton();
+        if (!btn) return;
+        GM_setValue(SPOTIFY_PLAY_KEY, null);
+        if (isPauseLabel(labelOf(btn))) return finish();
+        btn.click();
+        clickedAt = Date.now();
+        return;
+      }
+      if (!req.target && req.query && here.page === "search") {
+        const link = Array.from(document.querySelectorAll('a[href*="/album/"]'))
+          .filter(inMain)
+          .map(a => parseSpotifyPath(stripFixturePrefix(new URL(a.getAttribute("href"), location.href).pathname)))
+          .find(p => p.page === "album");
+        if (!link) return;
+        const target = { kind: "album", id: link.id };
+        GM_setValue(SPOTIFY_PLAY_KEY, { target, query: req.query, ts: Date.now() });
+        clearInterval(timer);
+        location.assign(spotifyTargetUrl(SPOTIFY_BASE, target));
+      }
+    };
+    const timer = setInterval(tick, 300);
+    tick();
   }
 
   // ---------------------------------------------------------------------------
@@ -1501,6 +1673,67 @@ se|Northern Sami|Davvisámegiella|
   const MEDIA = /^\/(film|film_genre)\//.test(pathname) || (PAGE === "chart" && pathParts[2] === "film")
     ? "film"
     : "music";
+
+  if (MEDIA === "music" && (PAGE === "release" || PAGE === "chart")) {
+    try { addSpotifyButtons(); } catch (error) { console.warn("[RYM Toolkit] Spotify buttons failed:", error); }
+  }
+
+  function makeSpotifyButton(target, query, extraClass) {
+    const a = document.createElement("a");
+    a.className = ["rym-spotify-btn", target ? "" : "rym-spotify-search", extraClass].filter(Boolean).join(" ");
+    a.textContent = "▶ Spotify";
+    a.href = target ? spotifyTargetUrl(SPOTIFY_BASE, target) : spotifySearchUrl(SPOTIFY_BASE, query);
+    a.title = target ? "Open on Spotify and play" : `No Spotify link here: search "${query}" and play the first album`;
+    // Named target: later clicks reuse the same Spotify tab when the browser allows it.
+    a.target = "rym-spotify";
+    const remember = () => GM_setValue(SPOTIFY_PLAY_KEY, { target, query: target ? "" : query, ts: Date.now() });
+    a.addEventListener("click", remember);
+    a.addEventListener("auxclick", event => { if (event.button === 1) remember(); });
+    return a;
+  }
+
+  function addSpotifyButtons() {
+    GM_addStyle(`
+      .rym-spotify-btn { display: inline-block; padding: 2px 10px; border-radius: 999px; background: #1db954; color: #000 !important; font-size: 12px; font-weight: 600; line-height: 1.6; text-decoration: none !important; white-space: nowrap; }
+      .rym-spotify-btn:hover { background: #1ed760; }
+      .rym-spotify-btn.rym-spotify-search { background: transparent; color: #1db954 !important; box-shadow: inset 0 0 0 1px #1db954; }
+      .rym-spotify-btn.rym-spotify-chart { margin: 4px 0 0 8px; font-size: 11px; padding: 1px 8px; }
+    `);
+    if (PAGE === "release") {
+      const table = document.querySelector("table.album_info");
+      if (!table || table.querySelector(".rym-spotify-btn")) return;
+      const parsed = parseReleaseDocTitle(document.title) || {};
+      const artistLink = table.querySelector("a.artist");
+      const query = buildSpotifySearchQuery(parsed.artist || (artistLink ? artistLink.textContent : ""), parsed.title || "");
+      const target = findSpotifyTarget(document);
+      if (!target && !query) return;
+      const row = document.createElement("tr");
+      const th = document.createElement("th");
+      const firstTh = table.querySelector("th");
+      if (firstTh) th.className = firstTh.className;
+      th.textContent = "Listen";
+      const td = document.createElement("td");
+      td.appendChild(makeSpotifyButton(target, query));
+      row.append(th, td);
+      (table.tBodies[0] || table).appendChild(row);
+      return;
+    }
+    const nameOf = node => {
+      if (!node) return "";
+      const original = node.querySelector(".ui_name_locale_original");
+      return cleanText((original || node).textContent);
+    };
+    for (const item of document.querySelectorAll(".page_charts_section_charts_item")) {
+      if (item.querySelector(".rym-spotify-btn")) continue;
+      const titleLink = item.querySelector(".page_charts_section_charts_item_link");
+      const artists = Array.from(item.querySelectorAll(".page_charts_section_charts_item_credited_links_primary a")).map(nameOf);
+      const query = buildSpotifySearchQuery(artists.join(" "), nameOf(titleLink));
+      const target = findSpotifyTarget(item);
+      if (!target && !query) continue;
+      const host = item.querySelector(".page_charts_section_charts_item_stats_media") || item.querySelector(".page_charts_section_charts_item_info") || item;
+      host.appendChild(makeSpotifyButton(target, query, "rym-spotify-chart"));
+    }
+  }
 
   if (document.getElementById("rym-picker-panel")) {
     console.warn("[RYM Toolkit] Another chart picker is already running on this page; disable one of them.");
@@ -3920,7 +4153,7 @@ se|Northern Sami|Davvisámegiella|
     }
 
     // Never hijack RYM's own controls.
-    if (target.closest("button, input, select, textarea, [contenteditable='true']")) return null;
+    if (target.closest("button, input, select, textarea, [contenteditable='true'], .rym-spotify-btn")) return null;
 
     const row = findInfoRow(target);
     const rowLabel = findRowLabel(row);
