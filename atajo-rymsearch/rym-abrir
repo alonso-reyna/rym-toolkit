@@ -40,9 +40,27 @@ antes=$(osascript -l JavaScript -e '
   c.running() ? "," + c.windows.id().join(",") + "," : ","' 2>/dev/null)
 open -gnb com.google.Chrome --args --profile-directory="Default" --new-window "$url"
 
-# 3. Wait for it to appear (up to 10 s; a cold start is slow) and bring it to the front.
+# 3. Wait for it to appear (up to 10 s; a cold start is slow), move it to the screen the mouse is on
+#    and bring it to the front.
 #    Activating Chrome before the window exists makes macOS jump to another desktop with Chrome windows.
 fin=$(osascript -l JavaScript - "$antes" 2>&1 <<'EOF'
+ObjC.import('AppKit');
+
+// Visible area (no menu bar or Dock) of the screen under the mouse, in top-left coordinates as Chrome uses them
+function areaDelMouse() {
+  const scr = $.NSScreen.screens;
+  const H0 = scr.objectAtIndex(0).frame.size.height; // main screen height (coordinate origin)
+  const m = $.NSEvent.mouseLocation;                 // bottom-left origin
+  for (let i = 0; i < scr.count; i++) {
+    const f = scr.objectAtIndex(i).frame;
+    if (m.x >= f.origin.x && m.x < f.origin.x + f.size.width && m.y >= f.origin.y && m.y <= f.origin.y + f.size.height) {
+      const v = scr.objectAtIndex(i).visibleFrame;
+      return [v.origin.x, H0 - (v.origin.y + v.size.height), v.origin.x + v.size.width, H0 - v.origin.y];
+    }
+  }
+  return null;
+}
+
 function run([antes]) {
   const c = Application('com.google.Chrome');
   let w = null;
@@ -50,9 +68,22 @@ function run([antes]) {
     delay(0.1);
     try { w = c.windows().find(v => !antes.includes(',' + v.id() + ',')) || null; } catch (e) {}
   }
-  if (w) w.index = 1;
+  if (!w) { c.activate(); return 'no-window'; }
+  const a = areaDelMouse();
+  let donde = 'no-screen';
+  if (a) {
+    const [x1, y1, x2, y2] = a, b = w.bounds();
+    const dentro = b.x >= x1 && b.y >= y1 && b.x + b.width <= x2 && b.y + b.height <= y2;
+    donde = 'in place';
+    if (!dentro) { // Chrome opened it on another screen: center it on the mouse's one
+      const ww = Math.min(b.width, x2 - x1), hh = Math.min(b.height, y2 - y1);
+      w.bounds = { x: Math.round(x1 + (x2 - x1 - ww) / 2), y: Math.round(y1 + (y2 - y1 - hh) / 2), width: ww, height: hh };
+      donde = 'moved';
+    }
+  }
+  w.index = 1;
   c.activate();
-  return w ? 'ok' : 'no-window';
+  return 'ok ' + donde;
 }
 EOF
 )

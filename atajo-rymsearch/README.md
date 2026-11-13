@@ -16,10 +16,10 @@ The file names are Spanish on purpose: they are the installed commands the Short
    `~/.local/bin/rym-abrir`. It exists so the Automation permission belongs to a fixed
    app instead of whatever app is in front.
 4. **`rym-abrir`**: if a Chrome window already has RYM, opens a tab there and brings it to the front. Otherwise it
-   opens a new Chrome window (Default profile) on the desktop you are on, waits for it to exist and brings it to
-   the front.
+   opens a new Chrome window (Default profile), waits for it to exist, moves it to the screen the mouse is on
+   (centered, only if Chrome put it elsewhere) and brings it to the front.
 
-Log of each run: `~/Library/Caches/rym/log` (`reuse:`, `window:`).
+Log of each run: `~/Library/Caches/rym/log` (`reuse:`, `window:`: `ok in place` / `ok moved` / `ok no-screen` / `no-window`).
 
 ## Simplified 2026-11-12
 
