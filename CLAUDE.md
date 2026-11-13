@@ -9,7 +9,7 @@ All the code lives in `rym-toolkit.user.js`; it is a single file on purpose.
 - `test/pure.test.js`: tests for the pure functions. Run `node test/pure.test.js` before any delivery.
 - `test/fixtures/`: fake pages (release, chart, find_similar_users) + `stub.js` with fake `GM_*`, for a browser smoke test.
 - `TUTORIAL.md`: how to use it (for Alonso). Update it when the UI changes.
-- `atajo-rymsearch/`: the "RYMsearch" macOS Shortcut (Spotify → RYM): `rym`, `rym-abrir`, `rym-espacio-vacio.js`.
+- `atajo-rymsearch/`: the "RYMsearch" macOS Shortcut (Spotify → RYM): `rym`, `rym-abrir`.
   They run from `~/.local/bin` (install with `./install.sh`); the Shortcut only calls `~/.local/bin/rym`. See its README.
   The file names are Spanish on purpose: they are installed binaries the Shortcut calls; renaming them breaks it.
 - `tools/install-in-chrome.sh`: opens the install link (current commit) in the Chrome window that has RYM.

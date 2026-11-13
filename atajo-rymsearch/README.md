@@ -13,31 +13,18 @@ The file names are Spanish on purpose: they are the installed commands the Short
    (DuckDuckGo `\` → first `rateyourmusic.com/release` result; `rym search` = RYM's own search),
    writes it to `~/Library/Caches/rym/url` and opens `~/Applications/RYM Abrir.app`.
 3. **`RYM Abrir.app`** (AppleScript applet, source in `RYM Abrir.applescript`): only runs
-   `~/.local/bin/rym-abrir`. It exists so the Accessibility/Automation permissions belong to a fixed
+   `~/.local/bin/rym-abrir`. It exists so the Automation permission belongs to a fixed
    app instead of whatever app is in front.
-4. **`rym-abrir`**: if a Chrome window already has RYM, opens a tab there. Otherwise it calls
-   `rym-espacio-vacio.js`, opens a new Chrome window (Default profile), waits for it to exist,
-   places it on the right screen and brings it to the front.
-5. **`rym-espacio-vacio.js`**: if the desktop you are on is already empty, opens there without moving. Otherwise,
-   with ⌃→ it checks only to the right (+1, +2, …; the left side is almost always full). If it reaches
-   the last one without finding an empty desktop, it creates a new one (Mission Control → "+", Esc) and switches
-   to it; if that fails, it goes back to the original. It knows which desktop it is on through `rym-espacios`
-   (a Swift helper, `rym-espacios.swift`, compiled by `install.sh`).
+4. **`rym-abrir`**: if a Chrome window already has RYM, opens a tab there and brings it to the front. Otherwise it
+   opens a new Chrome window (Default profile) on the desktop you are on, waits for it to exist and brings it to
+   the front.
 
-Log of each run: `~/Library/Caches/rym/log` (`reuse:`, `space:` — `here` / `ok` / `new` / `none` / `lost` / `no-info` —, `window:`).
-Entries from before 2026-11-08 use the old Spanish labels (`reuso:`, `espacio:`, `aqui`, `nuevo`, `ninguno`, `perdido`, `ventana:`).
+Log of each run: `~/Library/Caches/rym/log` (`reuse:`, `window:`).
 
-## Fix 2026-10-27 (empty desktop without the tab, with and without a monitor)
+## Simplified 2026-11-12
 
-- The current desktop was read from the `.plist`, which macOS writes late (also via `defaults`:
-  tested; it moved right, didn't notice and went back). Now it asks live with `rym-espacios`
-  and each key press is confirmed by waiting until the desktop really changes.
-- With "Displays have separate Spaces" the script always checked the main screen, even when the
-  keys moved the other one: now the first key press detects which screen moved and uses that one.
-- "Empty" only looked at the top-left corner of each window: now it uses real intersection and
-  confirms with two reads.
-- Chrome was activated at 0.7 s, before the window existed, and macOS jumped to another desktop
-  with Chrome. Now it waits for the new window (up to 10 s) and, if Chrome opened it on the other screen,
-  moves it into the area of the screen you are on.
+Alonso asked to drop the empty-desktop search (`rym-espacio-vacio.js` and the `rym-espacios` Swift helper: ⌃→,
+Mission Control, moving the window between screens). It complicated everything; now it only opens the window.
+`install.sh` deletes the old copies from `~/.local/bin`. They are in git history if they are ever needed.
 
 Backup of the previous version: `~/.local/share/rym-backup-2026-10-27/`.
