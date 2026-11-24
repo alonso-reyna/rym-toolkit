@@ -10,7 +10,7 @@ The file names are Spanish on purpose: they are the installed commands the Short
 1. **"RYMsearch" Shortcut** (Shortcuts app, Quick Action with an assigned key): a single
    *Run Shell Script* action → `~/.local/bin/rym` (zsh, input to stdin). It can't be exported from the terminal.
 2. **`rym`**: asks Spotify for artist/album, strips suffixes (Deluxe, Remaster…), builds the URL
-   (DuckDuckGo `\` → first `rateyourmusic.com/release` result; `rym search` = RYM's own search),
+   (Google "I'm feeling lucky", resolved in the script, opens the first `rateyourmusic.com/release` result; falls back to DuckDuckGo results; `rym search` = RYM's own search),
    writes it to `~/Library/Caches/rym/url` and opens `~/Applications/RYM Abrir.app`.
 3. **`RYM Abrir.app`** (AppleScript applet, source in `RYM Abrir.applescript`): only runs
    `~/.local/bin/rym-abrir`. It exists so the Automation permission belongs to a fixed

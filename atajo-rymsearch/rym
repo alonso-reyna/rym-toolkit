@@ -27,8 +27,18 @@ enc() { python3 -c 'import sys,urllib.parse;print(urllib.parse.quote_plus(sys.ar
 if [[ "$1" == "search" ]]; then
   url="https://rateyourmusic.com/search?searchtype=l&searchterm=$(enc "$artist $album_clean")"
 else
-  # "\" = DuckDuckGo's "I'm feeling ducky": redirects to the first result
-  url="https://duckduckgo.com/?q=$(enc "\\site:rateyourmusic.com/release $artist $album_clean")"
+  q="site:rateyourmusic.com/release $artist $album_clean"
+  # Google's "I'm feeling lucky" (btnI) answers with a 302 to google.com/url?q=<first result>.
+  # Resolve it here and open RYM directly. DuckDuckGo's "\" stopped redirecting (2026-11-23):
+  # it now sends you back to its own results page, which is only kept as the fallback.
+  ua="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36"
+  loc=$(curl -s -m 5 -A "$ua" -o /dev/null -w '%{redirect_url}' "https://www.google.com/search?btnI=1&q=$(enc "$q")")
+  url=$(python3 -c '
+import sys, urllib.parse as u
+p = u.urlparse(sys.argv[1])
+t = u.parse_qs(p.query).get("q", [""])[0] if p.netloc.endswith("google.com") else sys.argv[1]
+print(t if t.startswith("https://rateyourmusic.com/release/") else "")' "$loc")
+  [[ -z "$url" ]] && url="https://duckduckgo.com/?q=$(enc "$q")"
 fi
 
 # "RYM Abrir.app" does the opening so permissions do not depend on whichever app is in front
