@@ -37,7 +37,10 @@ else
 import sys, urllib.parse as u
 p = u.urlparse(sys.argv[1])
 t = u.parse_qs(p.query).get("q", [""])[0] if p.netloc.endswith("google.com") else sys.argv[1]
-print(t if t.startswith("https://rateyourmusic.com/release/") else "")' "$loc")
+s = u.urlparse(t).path.strip("/").split("/")
+# The first result can be a subpage (/reviews/1/, /credits/...): keep /release/<type>/<artist>/<title>/
+ok = t.startswith("https://rateyourmusic.com/release/") and len(s) >= 4
+print("https://rateyourmusic.com/" + "/".join(s[:4]) + "/" if ok else "")' "$loc")
   [[ -z "$url" ]] && url="https://duckduckgo.com/?q=$(enc "$q")"
 fi
 
